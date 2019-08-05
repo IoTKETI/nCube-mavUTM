@@ -1,0 +1,16 @@
+{
+  "name": "thyme",
+  "version": "2.3.0",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "mqtt": "^2.18.8"
+  },
+  "description": "&Cube:Thyme",
+  "main": "thyme.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Il Yeup Ahn, KETI",
+  "license": "BSD-3-Clause"
+}
