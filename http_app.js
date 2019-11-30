@@ -62,9 +62,13 @@ function mqtt_connect(serverip) {
     }
 
     mqtt_client.on('connect', function () {
-        var noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/+/#';
-        mqtt_client.subscribe(noti_topic);
-        console.log(noti_topic);
+        for(var idx in conf.drone) {
+            if(conf.drone.hasOwnProperty(idx)) {
+                var noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                mqtt_client.subscribe(noti_topic);
+                console.log(noti_topic);
+            }
+        }
     });
 
     mqtt_client.on('message', function (topic, message) {
@@ -120,13 +124,8 @@ else if(conf.commLink == 'tcp') {
 
 
 function from_gcs (msg) {
-    var parent = '/Mobius/' + conf.gcs + '/GCS_Data';
-    mqtt_client.publish(parent, msg);
-
     var content = new Buffer.from(msg, 'ascii').toString('hex');
-
     var ver = content.substr(0, 2).toLowerCase();
-
     if(ver == 'fd') {
         var sysid = content.substr(10, 2).toLowerCase();
         var msgid = content.substr(14, 6).toLowerCase();
@@ -138,6 +137,15 @@ function from_gcs (msg) {
         msgid = content.substr(10, 2).toLowerCase();
 
         gcs_content[sysid + '-' + msgid + '-' + ver] = content;
+    }
+
+    for(var idx in conf.drone) {
+        if (conf.drone.hasOwnProperty(idx)) {
+            if (parseInt(sysid, 16) == conf.drone[idx].sys_id) {
+                var parent = '/Mobius/' + conf.gcs + '/GCS_Data/' + conf.drone[idx].name;
+                mqtt_client.publish(parent, msg);
+            }
+        }
     }
 
     if(msgid == '2c') {
@@ -223,5 +231,9 @@ function send_to_gcs(content_each) {
         else if (msgid == '49') {
             console.log('49 MISSION_ITEM_INT - ' + content_each);
         }
+
+        // else if (msgid == '00') {
+        //     console.log('2c MISSION_COUNT - ' + content_each);
+        // }
     }
 }

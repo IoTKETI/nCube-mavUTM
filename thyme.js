@@ -25,15 +25,23 @@ global.sh_state = 'crtae';
 global.mqtt_client = null;
 
 global.conf = {};
-conf.gcs = 'UTM_UVARC';
 
 conf.cse = {};
-conf.cse.host = '203.253.128.161';
+conf.cse.host = 'localhost';
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
-conf.commLink = 'udp'; //'udp'; //'tcp';
+conf.commLink = 'tcp'; //'udp'; //'tcp';
 
 // AE core
+
+conf.gcs = 'UTM_UVARC';
+
+conf.drone = [];
+
+var info = {};
+info.name = 'KETI_IYAHN';
+info.sys_id = 11;
+conf.drone.push(info);
 
 require('./http_app');
 
