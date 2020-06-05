@@ -57,7 +57,7 @@ info.name = 'RKAH_UMACAir_03';
 info.gcs_sys_id = 255;              // input number of sysid of GCS
 conf.drone.push(info);
 
-conf.running_type = 'global';        // 'local' or 'global' : When this is worked in Server, select 'global'
+conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
 require('./http_app');
 
