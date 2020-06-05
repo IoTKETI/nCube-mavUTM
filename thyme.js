@@ -27,7 +27,8 @@ global.mqtt_client = null;
 global.conf = {};
 
 conf.cse = {};
-conf.cse.host = 'localhost';
+conf.cse.host = '203.253.128.161';
+conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
 conf.commLink = 'tcp'; //'udp'; //'tcp';
@@ -39,9 +40,24 @@ conf.gcs = 'UTM_UVARC';
 conf.drone = [];
 
 var info = {};
-info.name = 'KETI_IYAHN';
-info.sys_id = 11;
+info.name = 'RKAH_UMACAir_01';
+info.gcs = conf.gcs;
+info.gcs_sys_id = 255;
 conf.drone.push(info);
+
+info = {};
+info.name = 'RKAH_UMACAir_02';
+info.gcs = conf.gcs;
+info.gcs_sys_id = 255;
+conf.drone.push(info);
+
+info = {};
+info.gcs = conf.gcs;
+info.name = 'RKAH_UMACAir_03';
+info.gcs_sys_id = 255;              // input number of sysid of GCS
+conf.drone.push(info);
+
+conf.running_type = 'global';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
 require('./http_app');
 

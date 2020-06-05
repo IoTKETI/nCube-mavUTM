@@ -3,7 +3,8 @@
   "version": "2.3.0",
   "dependencies": {
     "fs": "0.0.1-security",
-    "mqtt": "^2.18.8"
+    "mqtt": "^2.18.8",
+    "shortid": "^2.2.15"
   },
   "description": "&Cube:Thyme",
   "main": "thyme.js",
