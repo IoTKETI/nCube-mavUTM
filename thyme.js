@@ -34,28 +34,29 @@ conf.usesecure = 'disable';
 conf.commLink = 'tcp'; //'udp'; //'tcp';
 
 // AE core
+conf.aei = "SgMavUTM"
 
 conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
 var info = {};
-info.name = 'RKAH_UMACAir_01';
+info.name = 'IYAHN_QUAD';
 info.gcs = conf.gcs;
 info.gcs_sys_id = 255;
 conf.drone.push(info);
-
-info = {};
-info.name = 'RKAH_UMACAir_02';
-info.gcs = conf.gcs;
-info.gcs_sys_id = 255;
-conf.drone.push(info);
-
-info = {};
-info.gcs = conf.gcs;
-info.name = 'RKAH_UMACAir_03';
-info.gcs_sys_id = 255;              // input number of sysid of GCS
-conf.drone.push(info);
+//
+// info = {};
+// info.name = 'RKAH_UMACAir_02';
+// info.gcs = conf.gcs;
+// info.gcs_sys_id = 255;
+// conf.drone.push(info);
+//
+// info = {};
+// info.gcs = conf.gcs;
+// info.name = 'RKAH_UMACAir_03';
+// info.gcs_sys_id = 255;              // input number of sysid of GCS
+// conf.drone.push(info);
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 

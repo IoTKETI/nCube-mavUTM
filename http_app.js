@@ -83,6 +83,15 @@ function mqtt_connect(serverip) {
         if(message[0] == 0xfe || message[0] == 0xfd) {
             send_to_gcs(message);
         }
+        else if(topic.includes('/oneM2M/req/')) {
+            var jsonObj = JSON.parse(message.toString());
+
+            if (jsonObj['m2m:rqp'] == null) {
+                jsonObj['m2m:rqp'] = jsonObj;
+            }
+
+            onem2m_mqtt_noti_action(topic.split('/'), jsonObj);
+        }
     });
 
     mqtt_client.on('error', function (err) {
@@ -90,8 +99,151 @@ function mqtt_connect(serverip) {
     });
 }
 
+function parse_sgn(rqi, pc, callback) {
+    if(pc.sgn) {
+        var nmtype = pc['sgn'] != null ? 'short' : 'long';
+        var sgnObj = {};
+        var cinObj = {};
+        sgnObj = pc['sgn'] != null ? pc['sgn'] : pc['singleNotification'];
+
+        if (nmtype === 'long') {
+            console.log('oneM2M spec. define only short name for resource')
+        }
+        else { // 'short'
+            if (sgnObj.sur) {
+                if(sgnObj.sur.charAt(0) != '/') {
+                    sgnObj.sur = '/' + sgnObj.sur;
+                }
+                var path_arr = sgnObj.sur.split('/');
+            }
+
+            if (sgnObj.nev) {
+                if (sgnObj.nev.rep) {
+                    if (sgnObj.nev.rep['m2m:cin']) {
+                        sgnObj.nev.rep.cin = sgnObj.nev.rep['m2m:cin'];
+                        delete sgnObj.nev.rep['m2m:cin'];
+                    }
+
+                    if (sgnObj.nev.rep.cin) {
+                        cinObj = sgnObj.nev.rep.cin;
+                    }
+                    else {
+                        console.log('[mqtt_noti_action] m2m:cin is none');
+                        cinObj = null;
+                    }
+                }
+                else {
+                    console.log('[mqtt_noti_action] rep tag of m2m:sgn.nev is none. m2m:notification format mismatch with oneM2M spec.');
+                    cinObj = null;
+                }
+            }
+            else if (sgnObj.sud) {
+                console.log('[mqtt_noti_action] received notification of verification');
+                cinObj = {};
+                cinObj.sud = sgnObj.sud;
+            }
+            else if (sgnObj.vrq) {
+                console.log('[mqtt_noti_action] received notification of verification');
+                cinObj = {};
+                cinObj.vrq = sgnObj.vrq;
+            }
+
+            else {
+                console.log('[mqtt_noti_action] nev tag of m2m:sgn is none. m2m:notification format mismatch with oneM2M spec.');
+                cinObj = null;
+            }
+        }
+    }
+    else {
+        console.log('[mqtt_noti_action] m2m:sgn tag is none. m2m:notification format mismatch with oneM2M spec.');
+        console.log(pc);
+    }
+
+    callback(path_arr, cinObj, rqi);
+}
+
+function response_mqtt(rsp_topic, rsc, to, fr, rqi, inpc, bodytype) {
+    var rsp_message = {};
+    rsp_message['m2m:rsp'] = {};
+    rsp_message['m2m:rsp'].rsc = rsc;
+    rsp_message['m2m:rsp'].to = to;
+    rsp_message['m2m:rsp'].fr = fr;
+    rsp_message['m2m:rsp'].rqi = rqi;
+    rsp_message['m2m:rsp'].pc = inpc;
+
+    if(bodytype === 'xml') {
+    }
+    else if (bodytype ===  'cbor') {
+    }
+    else { // 'json'
+        mqtt_client.publish(rsp_topic, JSON.stringify(rsp_message['m2m:rsp']));
+    }
+}
+
+function onem2m_mqtt_noti_action(topic_arr, jsonObj) {
+    if (jsonObj != null) {
+        var bodytype = 'json';
+        if(topic_arr[5] != null) {
+            bodytype = topic_arr[5];
+        }
+
+        var op = (jsonObj['m2m:rqp']['op'] == null) ? '' : jsonObj['m2m:rqp']['op'];
+        var to = (jsonObj['m2m:rqp']['to'] == null) ? '' : jsonObj['m2m:rqp']['to'];
+        var fr = (jsonObj['m2m:rqp']['fr'] == null) ? '' : jsonObj['m2m:rqp']['fr'];
+        var rqi = (jsonObj['m2m:rqp']['rqi'] == null) ? '' : jsonObj['m2m:rqp']['rqi'];
+        var pc = {};
+        pc = (jsonObj['m2m:rqp']['pc'] == null) ? {} : jsonObj['m2m:rqp']['pc'];
+
+        if(pc['m2m:sgn']) {
+            pc.sgn = {};
+            pc.sgn = pc['m2m:sgn'];
+            delete pc['m2m:sgn'];
+        }
+
+        parse_sgn(rqi, pc, function (path_arr, cinObj, rqi) {
+            if(cinObj) {
+                if(cinObj.sud || cinObj.vrq) {
+                    var resp_topic = '/oneM2M/resp/' + topic_arr[3] + '/' + topic_arr[4] + '/' + topic_arr[5];
+                    response_mqtt(resp_topic, 2001, '', conf.aei, rqi, '', topic_arr[5]);
+                }
+                else {
+                    if ('check_sub' === path_arr[path_arr.length - 1]) {
+                        console.log('mqtt ' + bodytype + ' notification <----');
+
+                        resp_topic = '/oneM2M/resp/' + topic_arr[3] + '/' + topic_arr[4] + '/' + topic_arr[5];
+                        response_mqtt(resp_topic, 2001, '', conf.aei, rqi, '', topic_arr[5]);
+
+                        console.log('mqtt response - 2001 ---->');
+
+                        for (var idx in conf.drone) {
+                            if (conf.drone.hasOwnProperty(idx)) {
+                                var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                                mqtt_client.unsubscribe(noti_topic);
+                                console.log('unsubscribe - ' + noti_topic);
+                            }
+                        }
+
+                        conf.drone = [];
+                        conf.drone = JSON.parse(JSON.stringify(cinObj.con)).drone;
+                        for (idx in conf.drone) {
+                            if (conf.drone.hasOwnProperty(idx)) {
+                                noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                                mqtt_client.subscribe(noti_topic);
+                                console.log('subscribe - ', noti_topic);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    else {
+        console.log('[mqtt_noti_action] message is not noti');
+    }
+}
+
 function retrieve_drone() {
-    rtvct('/Mobius/UTM/gMavUTM/la', 'SgMavUTM', 0, function (rsc, res_body, count) {
+    rtvct('/Mobius/UTM/gMavUTM/la', conf.aei, 0, function (rsc, res_body, count) {
         if(rsc == 2000) {
             conf.drone = [];
             conf.drone = JSON.parse(JSON.stringify(res_body[Object.keys(res_body)[0]].con)).drone;
@@ -102,6 +254,13 @@ function retrieve_drone() {
                     console.log(noti_topic);
                 }
             }
+
+            delsub('/Mobius/UTM/gMavUTM/check_sub', 0, function (rsc, res_body, count) {
+                crtsub('/Mobius/UTM/gMavUTM', conf.aei, 'check_sub', 'mqtt://' + conf.cse.host + '/' + conf.aei + '?ct=json', 0, function () {
+                    noti_topic = '/oneM2M/req/+/' + conf.aei + '/json';
+                    mqtt_client.subscribe(noti_topic);
+                });
+            });
         }
         else {
             console.log('[retrieve_drone] x-m2m-rsc : ' + rsc + ' <----' + res_body);
@@ -282,6 +441,34 @@ function rtvct(target, aei, count, callback) {
     });
 }
 
+function delsub(target, count, callback) {
+    http_request('Superman', target, 'delete', '', '', function (rsc, res_body) {
+        console.log(count + ' - ' + target + ' - x-m2m-rsc : ' + rsc + ' <----');
+        console.log(res_body);
+        callback(rsc, res_body, count);
+    });
+}
+
+function crtsub(parent, aei, rn, nu, count, callback) {
+    var results_ss = {};
+    var bodyString = '';
+    results_ss['m2m:sub'] = {};
+    results_ss['m2m:sub'].rn = rn;
+    results_ss['m2m:sub'].enc = {net: [1,2,3,4]};
+    results_ss['m2m:sub'].nu = [nu];
+    results_ss['m2m:sub'].nct = 2;
+    //results_ss['m2m:sub'].exc = 0;
+
+    bodyString = JSON.stringify(results_ss);
+    console.log(bodyString);
+
+    http_request(aei, parent, 'post', '23', bodyString, function (rsc, res_body) {
+        console.log(count + ' - ' + parent + '/' + rn + ' - x-m2m-rsc : ' + rsc + ' <----');
+        console.log(JSON.stringify(res_body));
+        callback(rsc, res_body, count);
+    });
+}
+
 function http_request(origin, path, method, ty, bodyString, callback) {
     var options = {
         hostname: conf.cse.host,
@@ -302,10 +489,10 @@ function http_request(origin, path, method, ty, bodyString, callback) {
 
     if(method === 'post') {
         var a = (ty==='') ? '': ('; ty='+ty);
-        options.headers['Content-Type'] = 'application/vnd.onem2m-res+' + conf.ae.bodytype + a;
+        options.headers['Content-Type'] = 'application/vnd.onem2m-res+json' + a;
     }
     else if(method === 'put') {
-        options.headers['Content-Type'] = 'application/vnd.onem2m-res+' + conf.ae.bodytype;
+        options.headers['Content-Type'] = 'application/vnd.onem2m-res+json';
     }
 
     if(conf.usesecure === 'enable') {
