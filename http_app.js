@@ -273,7 +273,7 @@ function retrieve_drone() {
 var gcs_content = {};
 
 var udpClient = null;
-var utm_socket = null;
+var utm_socket = {};
 
 if(conf.commLink == 'udp') {
     if(udpClient == null) {
@@ -286,7 +286,9 @@ else if(conf.commLink == 'tcp') {
     var _server = net.createServer(function (socket) {
         console.log('socket connected');
 
-        utm_socket = socket;
+        var sock_id = require('shortid').generate();
+        socket.id = sock_id;
+        utm_socket[sock_id] = socket;
 
         socket.on('data', from_gcs);
 
@@ -296,7 +298,7 @@ else if(conf.commLink == 'tcp') {
 
         socket.on('close', function() {
             console.log('close');
-            utm_socket = null;
+            delete utm_socket[socket.id];
         });
 
         socket.on('error', function(e) {
@@ -371,11 +373,13 @@ function from_gcs (msg) {
 }
 
 function send_to_gcs(content_each) {
-    if(utm_socket != null) {
-        utm_socket.write(content_each);
-        //console.log(content_each);
+    for(var idx in utm_socket) {
+        if(utm_socket.hasOwnProperty(idx)) {
+            utm_socket[idx].write(content_each);
+        }
     }
-    else if(udpClient != null) {
+
+    if(udpClient != null) {
         udpClient.send(content_each, 14550, 'localhost', function (error) {
             if (error) {
                 udpClient.close();
@@ -384,7 +388,7 @@ function send_to_gcs(content_each) {
         });
     }
 
-    if (utm_socket != null || udpClient != null) {
+    if (Object.keys(utm_socket).length > 0 || udpClient != null) {
         content_each = content_each.toString('hex');
         var ver = content_each.substr(0, 2);
         if (ver == 'fd') {
