@@ -284,25 +284,32 @@ if(conf.commLink == 'udp') {
 }
 else if(conf.commLink == 'tcp') {
     var _server = net.createServer(function (socket) {
-        console.log('socket connected');
+        socket.id = require('shortid').generate();
+        console.log('socket connected [' + socket.id + ']');
 
-        var sock_id = require('shortid').generate();
-        socket.id = sock_id;
-        utm_socket[sock_id] = socket;
+        utm_socket[socket.id] = socket;
 
         socket.on('data', from_gcs);
 
         socket.on('end', function() {
             console.log('end');
+            if(utm_socket.hasOwnProperty(this.id)) {
+                delete utm_socket[this.id];
+            }
         });
 
         socket.on('close', function() {
             console.log('close');
-            delete utm_socket[socket.id];
+            if(utm_socket.hasOwnProperty(this.id)) {
+                delete utm_socket[this.id];
+            }
         });
 
         socket.on('error', function(e) {
             console.log('error ', e);
+            if(utm_socket.hasOwnProperty(this.id)) {
+                delete utm_socket[this.id];
+            }
         });
     });
 
