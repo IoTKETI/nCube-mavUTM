@@ -27,7 +27,7 @@ global.mqtt_client = null;
 global.conf = {};
 
 conf.cse = {};
-conf.cse.host = '150.197.3.100'; //'203.253.128.161';
+conf.cse.host = '203.253.128.161'; //'150.197.3.100'; //'203.253.128.161';
 conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';

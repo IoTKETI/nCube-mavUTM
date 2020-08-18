@@ -386,6 +386,9 @@ function from_gcs (msg) {
 global.hb = {};
 hb.HEARTBEAT = {};
 
+global.gpi = {};
+
+
 function send_to_gcs(content_each) {
     for(var idx in utm_socket) {
         if(utm_socket.hasOwnProperty(idx)) {
@@ -454,6 +457,44 @@ function send_to_gcs(content_each) {
             hb[sys_id].custom_mode = Buffer.from(custom_mode, 'hex').readUInt32LE(0);
             hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
             hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
+        }
+
+        else if (msgid == '21') { // #33
+            if (ver == 'fd') {
+                var base_offset = 20;
+                var time_boot_ms = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var lat = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var lon = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var alt = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                time_boot_ms = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                lat = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                lon = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                alt = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+            }
+
+            var sys_id = parseInt(sysid, 16).toString();
+            if(!gpi.hasOwnProperty(sys_id)) {
+                gpi[sys_id] = {};
+            }
+
+            gpi[sys_id].time_boot_ms = Buffer.from(time_boot_ms, 'hex').readUInt32LE(0);
+            gpi[sys_id].lat = Buffer.from(lat, 'hex').readInt32LE(0);
+            gpi[sys_id].lon = Buffer.from(lon, 'hex').readInt32LE(0);
+            gpi[sys_id].alt = Buffer.from(alt, 'hex').readInt32LE(0);
+            gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
         }
 
         // if(sysid == '37' ) {
