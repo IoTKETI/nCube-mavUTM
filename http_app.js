@@ -354,30 +354,37 @@ function from_gcs (msg) {
         }
     }
 
-    if(msgid == '2c') {
-        console.log('<-- 2c MISSION_COUNT - ' + content);
+    if(msgid == '4c') {
+        console.log('<-- 4c MAVLINK_MSG_ID_COMMAND_LONG - ' + content);
     }
 
-    else if(msgid == '28') {
-        console.log('<-- 28 MISSION_REQ - ' + content);
-    }
-
-    else if(msgid == '2f') {
-        console.log('<-- 2f MISSION_ACK - ' + content);
-    }
-
-    else if(msgid == '33') {
-        console.log('<-- 33 MISSION_REQ_INT - ' + content);
-    }
-
-    else if(msgid == '49') {
-        console.log('<-- 49 MISSION_ITEM_INT - ' + content);
-    }
-
-    else if(msgid == '27') {
-        console.log('<-- 27 MISSION_ITEM - ' + content);
-    }
+    // else if(msgid == '2c') {
+    //     console.log('<-- 2c MISSION_COUNT - ' + content);
+    // }
+    //
+    // else if(msgid == '28') {
+    //     console.log('<-- 28 MISSION_REQ - ' + content);
+    // }
+    //
+    // else if(msgid == '2f') {
+    //     console.log('<-- 2f MISSION_ACK - ' + content);
+    // }
+    //
+    // else if(msgid == '33') {
+    //     console.log('<-- 33 MISSION_REQ_INT - ' + content);
+    // }
+    //
+    // else if(msgid == '49') {
+    //     console.log('<-- 49 MISSION_ITEM_INT - ' + content);
+    // }
+    //
+    // else if(msgid == '27') {
+    //     console.log('<-- 27 MISSION_ITEM - ' + content);
+    // }
 }
+
+global.hb = {};
+hb.HEARTBEAT = {};
 
 function send_to_gcs(content_each) {
     for(var idx in utm_socket) {
@@ -407,6 +414,48 @@ function send_to_gcs(content_each) {
             msgid = content_each.substr(10, 2).toLowerCase();
         }
 
+        if (msgid == '00') { // #00 : HEARTBEAT
+            if (ver == 'fd') {
+                var base_offset = 20;
+                var custom_mode = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var type = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var autopilot = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var base_mode = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var system_status = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var mavlink_version = content_each.substr(base_offset, 2).toLowerCase();
+            } else {
+                base_offset = 12;
+                custom_mode = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                type = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                autopilot = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                base_mode = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                system_status = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mavlink_version = content_each.substr(base_offset, 2).toLowerCase();
+            }
+
+            //console.log(content_each);
+            var sys_id = parseInt(sysid, 16).toString();
+            if(!hb.hasOwnProperty(sys_id)) {
+                hb[sys_id] = {};
+            }
+            hb[sys_id].type = Buffer.from(type, 'hex').readUInt8(0);
+            hb[sys_id].autopilot = Buffer.from(autopilot, 'hex').readUInt8(0);
+            hb[sys_id].base_mode = Buffer.from(base_mode, 'hex').readUInt8(0);
+            hb[sys_id].custom_mode = Buffer.from(custom_mode, 'hex').readUInt32LE(0);
+            hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
+            hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
+        }
+
         // if(sysid == '37' ) {
         //     console.log('55 - ' + content_each);
         // }
@@ -420,25 +469,25 @@ function send_to_gcs(content_each) {
         //     console.log('255 - ' + content_each);
         // }
 
-        if (msgid == '2c') {
-            console.log('2c MISSION_COUNT - ' + content_each);
-        }
-
-        else if (msgid == '28') {
-            console.log('28 MISSION_REQ - ' + content_each);
-        }
-
-        else if (msgid == '2f') {
-            console.log('2f MISSION_ACK - ' + content_each);
-        }
-
-        else if (msgid == '33') {
-            console.log('33 MISSION_REQ_INT - ' + content_each);
-        }
-
-        else if (msgid == '49') {
-            console.log('49 MISSION_ITEM_INT - ' + content_each);
-        }
+        // if (msgid == '2c') {
+        //     console.log('2c MISSION_COUNT - ' + content_each);
+        // }
+        //
+        // else if (msgid == '28') {
+        //     console.log('28 MISSION_REQ - ' + content_each);
+        // }
+        //
+        // else if (msgid == '2f') {
+        //     console.log('2f MISSION_ACK - ' + content_each);
+        // }
+        //
+        // else if (msgid == '33') {
+        //     console.log('33 MISSION_REQ_INT - ' + content_each);
+        // }
+        //
+        // else if (msgid == '49') {
+        //     console.log('49 MISSION_ITEM_INT - ' + content_each);
+        // }
 
         // else if (msgid == '00') {
         //     console.log('2c MISSION_COUNT - ' + content_each);
