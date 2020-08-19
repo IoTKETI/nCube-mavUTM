@@ -52,7 +52,7 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require( 'terminal-kit' ).terminal ;
 
-var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'Alt' , 'Hold', 'Land', 'Start_Mission', 'Quit' ] ;
+var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'Alt' , 'Hold', 'Land', 'Start_Mission', 'WPNAV_SPEED', 'Quit' ] ;
 
 var options = {
     y: 1 ,	// the menu will be on the top of the terminal
@@ -424,6 +424,51 @@ function startMenu() {
                     setTimeout(startMenu,  back_menu_delay * 100 + back_menu_delay * (conf.drone.length+1));
 
                 }
+                else if (response.selectedText === 'WPNAV_SPEED') {
+                    term.eraseDisplayBelow();
+                    term('Select Speed (1 - 12 (m/s)): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                var speed = parseFloat(input);
+
+                                if(speed > 12.0) {
+                                    speed = 12.0;
+                                }
+
+                                if(speed < 1) {
+                                    speed = 1.0
+                                }
+
+                                var command_delay = 0;
+                                for (var idx in conf.drone) {
+                                    if (conf.drone.hasOwnProperty(idx)) {
+                                        cur_drone_selected = conf.drone[idx].name;
+
+                                        command_delay++;
+
+                                        // var custom_mode = 4;
+                                        // var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                                        // base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                                        // send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+                                        setTimeout(send_wpnav_speed_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                    }
+                                }
+
+                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                            }
+                        }
+                    );
+                }
                 else {
                     setTimeout(startMenu,  back_menu_delay);
                 }
@@ -645,6 +690,42 @@ function startMenu() {
 
                     setTimeout(startMenu,  back_menu_delay * 100 + back_menu_delay);
                 }
+                else if (response.selectedText === 'WPNAV_SPEED') {
+                    term.eraseDisplayBelow();
+                    term('Select Speed (1 - 12 (m/s)): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                // var custom_mode = 4;
+                                // var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                                // base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                                // send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+                                var speed = parseFloat(input);
+
+                                if(speed > 12.0) {
+                                    speed = 12.0;
+                                }
+
+                                if(speed < 1) {
+                                    speed = 1.0
+                                }
+
+                                setTimeout(send_wpnav_speed_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+
+                                setTimeout(startMenu,  back_menu_delay * 2);
+                            }
+                        }
+                    );
+                }
                 else {
                     setTimeout(startMenu,  back_menu_delay);
                 }
@@ -760,9 +841,17 @@ function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
                 break;
 
             case mavlink.MAVLINK_MSG_ID_SET_MODE:
-                    mavMsg = new mavlink.messages.set_mode(params.target_system,
+                mavMsg = new mavlink.messages.set_mode(params.target_system,
                     params.base_mode,
                     params.custom_mode);
+                break;
+
+            case mavlink.MAVLINK_MSG_ID_PARAM_SET:
+                mavMsg = new mavlink.messages.param_set(params.target_system,
+                    params.target_component,
+                    params.param_id,
+                    params.param_value,
+                    params.param_type);
                 break;
         }
     }
@@ -1100,6 +1189,78 @@ function send_speed_command(target_name, pub_topic, target_sys_id, target_speed)
         }
         else {
             term.blue('\nSend Speed command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
+function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "WPNAV_SPEED";
+    btn_params.param_type = 9;
+    btn_params.param_value = target_speed * 100; // cm / s.
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('\nSend WPNAV Speed command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
+function send_wpnav_speed_dn_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "WPNAV_SPEED_DN";
+    btn_params.param_type = 9;
+    btn_params.param_value = target_speed * 100; // cm / s.
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('\nSend WPNAV Speed DN to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
+function send_wpnav_speed_up_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "WPNAV_SPEED_UP";
+    btn_params.param_type = 9;
+    btn_params.param_value = target_speed * 100; // cm / s.
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('\nSend WPNAV Speed UP command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
