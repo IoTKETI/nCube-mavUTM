@@ -52,7 +52,7 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require( 'terminal-kit' ).terminal ;
 
-var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Alt', 'Land', 'Start_Mission', 'WPNAV_SPEED', 'Quit' ] ;
+var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'Quit' ] ;
 
 var options = {
     y: 1 ,	// the menu will be on the top of the terminal
@@ -317,8 +317,8 @@ function startMenu() {
                                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                                         send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
 
-                                        var lat = gpi[target_system_id[cur_drone_selected]].lat;
-                                        var lon = gpi[target_system_id[cur_drone_selected]].lon;
+                                        var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
+                                        var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
 
                                         setTimeout(send_goto_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
                                     }
@@ -366,7 +366,7 @@ function startMenu() {
                         }
                     );
                 }
-                else if (response.selectedText === 'Speed') {
+                else if (response.selectedText === 'Change_Speed') {
                     term.eraseDisplayBelow();
                     term('Select Speed (1 - 12 (m/s)): ');
 
@@ -426,8 +426,8 @@ function startMenu() {
                             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                             send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
 
-                            var lat = gpi[target_system_id[cur_drone_selected]].lat;
-                            var lon = gpi[target_system_id[cur_drone_selected]].lon;
+                            var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
+                            var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
                             var alt = gpi[target_system_id[cur_drone_selected]].alt;
 
                             setTimeout(send_goto_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
@@ -468,6 +468,46 @@ function startMenu() {
                     setTimeout(startMenu,  back_menu_delay * 100 + back_menu_delay * (conf.drone.length+1));
 
                 }
+                else if (response.selectedText === 'WP_YAW_BEHAVIOR') {
+                    term.eraseDisplayBelow();
+                    term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 0, 1, 2, 3], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                var param_value = parseInt(input, 10);
+
+                                if(param_value > 3) {
+                                    param_value = 3;
+                                }
+
+                                if(param_value < 0) {
+                                    param_value = 0
+                                }
+
+                                var command_delay = 0;
+                                for (var idx in conf.drone) {
+                                    if (conf.drone.hasOwnProperty(idx)) {
+                                        cur_drone_selected = conf.drone[idx].name;
+
+                                        command_delay++;
+
+                                        setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+                                    }
+                                }
+
+                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                            }
+                        }
+                    );
+                }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
                     term('Select Speed (1 - 12 (m/s)): ');
@@ -498,11 +538,6 @@ function startMenu() {
                                         cur_drone_selected = conf.drone[idx].name;
 
                                         command_delay++;
-
-                                        // var custom_mode = 4;
-                                        // var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
-                                        // base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                                        // send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
 
                                         setTimeout(send_wpnav_speed_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
                                     }
@@ -656,8 +691,11 @@ function startMenu() {
 
                                 var alt = parseFloat(input);
 
-                                var lat = gpi[target_system_id[cur_drone_selected]].lat;
-                                var lon = gpi[target_system_id[cur_drone_selected]].lon;
+                                var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
+                                var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
+
+                                console.log('lat : ' + lat)
+                                console.log('lon : ' + lon)
 
                                 setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
 
@@ -694,7 +732,7 @@ function startMenu() {
                         }
                     );
                 }
-                else if (response.selectedText === 'Speed') {
+                else if (response.selectedText === 'Change_Speed') {
                     term.eraseDisplayBelow();
                     term('Select Speed (1 - 12 (m/s)): ');
 
@@ -738,8 +776,8 @@ function startMenu() {
                     base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                     send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
 
-                    var lat = gpi[target_system_id[cur_drone_selected]].lat;
-                    var lon = gpi[target_system_id[cur_drone_selected]].lon;
+                    var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
+                    var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
                     var alt = gpi[target_system_id[cur_drone_selected]].relative_alt;
 
                     setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
@@ -761,6 +799,37 @@ function startMenu() {
                     setTimeout(send_start_mission_command, back_menu_delay * 100, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected],0, 7);
 
                     setTimeout(startMenu,  back_menu_delay * 100 + back_menu_delay);
+                }
+                else if (response.selectedText === 'WP_YAW_BEHAVIOR') {
+                    term.eraseDisplayBelow();
+                    term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 0, 1, 2, 3], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                var param_value = parseInt(input, 10);
+
+                                if(param_value > 3) {
+                                    param_value = 3;
+                                }
+
+                                if(param_value < 0) {
+                                    param_value = 0
+                                }
+
+                                setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+
+                                setTimeout(startMenu,  back_menu_delay * 2);
+                            }
+                        }
+                    );
                 }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
@@ -1300,13 +1369,37 @@ function send_change_altitude_command(target_name, pub_topic, target_sys_id, tar
     }
 }
 
+function send_wp_yaw_behavior_param_set_command(target_name, pub_topic, target_sys_id, value) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "WP_YAW_BEHAVIOR";
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_UINT8;
+    btn_params.param_value = value;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('\nSend WP_YAW_HEHAVIOR param set command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
 
 function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
     var btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_SPEED";
-    btn_params.param_type = 9;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
     btn_params.param_value = target_speed * 100; // cm / s.
 
     try {
@@ -1330,7 +1423,7 @@ function send_wpnav_speed_dn_param_set_command(target_name, pub_topic, target_sy
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_SPEED_DN";
-    btn_params.param_type = 9;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
     btn_params.param_value = target_speed * 100; // cm / s.
 
     try {
@@ -1354,7 +1447,7 @@ function send_wpnav_speed_up_param_set_command(target_name, pub_topic, target_sy
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_SPEED_UP";
-    btn_params.param_type = 9;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
     btn_params.param_value = target_speed * 100; // cm / s.
 
     try {

@@ -405,7 +405,7 @@ function send_to_gcs(content_each) {
         });
     }
 
-    if (Object.keys(utm_socket).length > 0 || udpClient != null) {
+    // if (Object.keys(utm_socket).length > 0 || udpClient != null) {
         content_each = content_each.toString('hex');
         var ver = content_each.substr(0, 2);
         if (ver == 'fd') {
@@ -533,7 +533,7 @@ function send_to_gcs(content_each) {
         // else if (msgid == '00') {
         //     console.log('2c MISSION_COUNT - ' + content_each);
         // }
-    }
+    // }
 }
 
 function rtvct(target, aei, count, callback) {
