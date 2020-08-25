@@ -52,7 +52,7 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require( 'terminal-kit' ).terminal ;
 
-var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'SYSID_THISMAV', 'Quit' ] ;
+var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'SYSID_THISMAV', 'Reboot', 'Quit' ] ;
 
 var alt_items = ['cancel', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150'] ;
 
@@ -169,6 +169,35 @@ function startMenu() {
                     }
 
                     setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                }
+                else if (response.selectedText === 'Reboot') {
+                    term.eraseDisplayBelow();
+                    term('Are you sure? (Y / N): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 'Y', 'N'], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input.toLowerCase() === 'n' || input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                var command_delay = 0;
+                                for (var idx in conf.drone) {
+                                    if (conf.drone.hasOwnProperty(idx)) {
+                                        cur_drone_selected = conf.drone[idx].name;
+
+                                        command_delay++;
+
+                                        setTimeout(send_reboot_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected]);
+                                    }
+                                }
+                                setTimeout(startMenu, back_menu_delay * command_delay + back_menu_delay);
+                            }
+                        }
+                    );
                 }
                 else if (response.selectedText === 'Takeoff') {
                     term.eraseDisplayBelow();
@@ -918,6 +947,27 @@ function startMenu() {
                         }
                     );
                 }
+                else if (response.selectedText === 'Reboot') {
+                    term.eraseDisplayBelow();
+                    term('Are you sure? (Y / N): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: ['cancel', 'Y', 'N'], autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input.toLowerCase() === 'n' || input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                setTimeout(send_reboot_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected]);
+
+                                setTimeout(startMenu,  back_menu_delay * 2);
+                            }
+                        }
+                    );
+                }
                 else {
                     setTimeout(startMenu,  back_menu_delay);
                 }
@@ -1057,6 +1107,36 @@ function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
     }
 
     return genMsg;
+}
+
+function send_reboot_command(target_name, pub_topic, target_sys_id) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.command = mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN;
+    btn_params.confirmation = 0;
+    btn_params.param1 = 1;
+    btn_params.param2 = 0;
+    btn_params.param3 = 0;
+    btn_params.param4 = 0;
+    btn_params.param5 = 0;
+    btn_params.param6 = 0;
+    btn_params.param7 = 0;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('Send Reboot command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
 }
 
 function send_arm_command(target_name, pub_topic, target_sys_id, param1, param2) {
