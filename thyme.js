@@ -42,6 +42,36 @@ conf.drone = [];
 
 var info = {};
 
+info = {};
+info.name = 'KETI_Air_01';
+info.gcs = conf.gcs;
+info.gcs_sys_id = 255;
+info.goto_position = [
+    'cancel' , '37.2597483:126.6766316:6:2' , '37.2597611:126.6759114:6:2'
+];
+info.system_id = 1;
+conf.drone.push(info);
+
+info = {};
+info.name = 'KETI_Air_02';
+info.gcs = conf.gcs;
+info.gcs_sys_id = 255;
+info.goto_position = [
+    'cancel' , '37.2597809:126.6765692:20:4' , '37.2596535:126.6762264:20:4'
+];
+info.system_id = 1;
+conf.drone.push(info);
+
+info = {};
+info.name = 'KETI_Air_03';
+info.gcs = conf.gcs;
+info.gcs_sys_id = 255;
+info.goto_position = [
+    'cancel' , '37.2597809:126.6765692:20:4' , '37.2596535:126.6762264:20:4'
+];
+info.system_id = 1;
+conf.drone.push(info);
+
 // info = {};
 // info.name = 'KETI_DIoT';
 // info.gcs = conf.gcs;
@@ -52,15 +82,15 @@ var info = {};
 // info.system_id = 10;
 // conf.drone.push(info);
 
-info = {};
-info.name = 'UMACAir11';
-info.gcs = conf.gcs;
-info.gcs_sys_id = 255;
-info.goto_position = [
-    'cancel' , '37.2737168:127.3643657:35:4' , '37.2727243:127.3647090:35:4' , '37.2732088:127.3667153:35:4' , '37.2741884:127.3663800:35:4', '37.2737189:127.3650476:35:4', '37.2740423:127.3666234:35:4'
-];
-info.system_id = 11;
-conf.drone.push(info);
+// info = {};
+// info.name = 'UMACAir11';
+// info.gcs = conf.gcs;
+// info.gcs_sys_id = 255;
+// info.goto_position = [
+//     'cancel' , '37.2737168:127.3643657:35:4' , '37.2727243:127.3647090:35:4' , '37.2732088:127.3667153:35:4' , '37.2741884:127.3663800:35:4', '37.2737189:127.3650476:35:4', '37.2740423:127.3666234:35:4'
+// ];
+// info.system_id = 11;
+// conf.drone.push(info);
 
 info = {};
 info.name = 'UMACAir12';
@@ -94,7 +124,7 @@ conf.drone.push(info);
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
-conf.use_terminal = 'disable'; //'enable';
+conf.use_terminal = 'enable'; //'enable';
 
 
 if(conf.use_terminal === 'enable') {

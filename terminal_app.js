@@ -52,7 +52,13 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require( 'terminal-kit' ).terminal ;
 
-var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'Quit' ] ;
+var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'SYSID_THISMAV', 'Quit' ] ;
+
+var alt_items = ['cancel', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150'] ;
+
+var speed_items = ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] ;
+
+var id_items = ['cancel', 'random', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150', '160'] ;
 
 var options = {
     y: 1 ,	// the menu will be on the top of the terminal
@@ -169,7 +175,7 @@ function startMenu() {
                     term('Select Height : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if (input === 'cancel') {
                                 setTimeout(startMenu, back_menu_delay);
@@ -294,7 +300,7 @@ function startMenu() {
                     term('Select Altitude : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -334,7 +340,7 @@ function startMenu() {
                     term('Select Altitude : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -371,7 +377,7 @@ function startMenu() {
                     term('Select Speed (1 - 12 (m/s)): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -473,7 +479,7 @@ function startMenu() {
                     term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 0, 1, 2, 3], autoCompleteMenu: true},
+                        {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -513,7 +519,7 @@ function startMenu() {
                     term('Select Speed (1 - 12 (m/s)): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -548,6 +554,12 @@ function startMenu() {
                         }
                     );
                 }
+                else if (response.selectedText === 'SYSID_THISMAV') {
+                    term.eraseDisplayBelow();
+
+                    term.red('Changing sys_id here is not supported');
+                    setTimeout(startMenu,  back_menu_delay);
+                }
                 else {
                     setTimeout(startMenu,  back_menu_delay);
                 }
@@ -581,7 +593,7 @@ function startMenu() {
                     term('Select Height : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if (input === 'cancel') {
                                 setTimeout(startMenu, back_menu_delay);
@@ -675,7 +687,7 @@ function startMenu() {
                     term('Select Altitude : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -709,7 +721,7 @@ function startMenu() {
                     term('Select Altitude : ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150], autoCompleteMenu: true},
+                        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -737,7 +749,7 @@ function startMenu() {
                     term('Select Speed (1 - 12 (m/s)): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -805,7 +817,7 @@ function startMenu() {
                     term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 0, 1, 2, 3], autoCompleteMenu: true},
+                        {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -836,7 +848,7 @@ function startMenu() {
                     term('Select Speed (1 - 12 (m/s)): ');
 
                     term.inputField(
-                        {history: history, autoComplete: ['cancel', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], autoCompleteMenu: true},
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
@@ -863,6 +875,45 @@ function startMenu() {
                                 setTimeout(send_wpnav_speed_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
 
                                 setTimeout(startMenu,  back_menu_delay * 2);
+                            }
+                        }
+                    );
+                }
+                else if (response.selectedText === 'SYSID_THISMAV') {
+                    term.eraseDisplayBelow();
+                    term('Select id (random, 10 - 250): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: id_items, autoCompleteMenu: true},
+                        function (error, input) {
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                if(input === 'random') {
+                                    var id_val = parseInt(10 + Math.random() * 250, 10);
+                                }
+                                else {
+                                    id_val = parseInt(input, 10);
+                                }
+
+                                if(id_val > 250) {
+                                    term.red('\nid is out of range.\n');
+                                    setTimeout(startMenu,  back_menu_delay);
+                                }
+                                else if(id_val < 10) {
+                                    term.red('\nid is out of range.\n');
+                                    setTimeout(startMenu,  back_menu_delay);
+                                }
+                                else {
+                                    term.red('\nThe selected id is %d\n', id_val);
+                                    setTimeout(send_sysid_thismav_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], id_val);
+
+                                    setTimeout(startMenu,  back_menu_delay * 2);
+                                }
                             }
                         }
                     );
@@ -1449,6 +1500,30 @@ function send_wpnav_speed_up_param_set_command(target_name, pub_topic, target_sy
     btn_params.param_id = "WPNAV_SPEED_UP";
     btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
     btn_params.param_value = target_speed * 100; // cm / s.
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('\nSend WPNAV Speed UP command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex ) {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
+function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys_id, id_val) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "SYSID_THISMAV";
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_UINT8;
+    btn_params.param_value = id_val; // cm / s.
 
     try {
         var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
