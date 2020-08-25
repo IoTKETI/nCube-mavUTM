@@ -47,6 +47,7 @@
 // ) ;
 
 require('./http_app');
+var fs = require('fs');
 
 var mavlink = require('./mavlibrary/mavlink.js');
 
@@ -941,6 +942,17 @@ function startMenu() {
                                     term.red('\nThe selected id is %d\n', id_val);
                                     setTimeout(send_sysid_thismav_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], id_val);
 
+                                    for (var idx in conf.drone) {
+                                        if (conf.drone.hasOwnProperty(idx)) {
+                                            if(cur_drone_selected === conf.drone[idx].name) {
+                                                conf.drone[idx].system_id = id_val;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    fs.writeFileSync('drone_info.json', JSON.stringify(conf.drone, null, 4), 'utf8');
+
                                     setTimeout(startMenu,  back_menu_delay * 2);
                                 }
                             }
@@ -1129,7 +1141,7 @@ function send_reboot_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.blue('Send Reboot command to %s\n', target_name);
+            term.blue('\nSend Reboot command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1611,7 +1623,7 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend WPNAV Speed UP command to %s\n', target_name);
+            term.blue('\nSend SYSID_THISMAV command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
