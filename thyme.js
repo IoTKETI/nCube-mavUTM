@@ -124,7 +124,7 @@ conf.drone.push(info);
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
-conf.use_terminal = 'enable'; //'enable';
+conf.use_terminal = 'disable'; //'enable';
 
 
 if(conf.use_terminal === 'enable') {
