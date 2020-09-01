@@ -42,8 +42,10 @@ conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
+global.drone_info_file = 'drone_info.json';
+
 try {
-    conf.drone = JSON.parse(fs.readFileSync('drone_info.json', 'utf8'));
+    conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
 }
 catch (e) {
     var info = {};
@@ -58,7 +60,7 @@ catch (e) {
     info.system_id = 1;
     conf.drone.push(info);
 
-    fs.writeFileSync('drone_info.json', JSON.stringify(conf.drone, null, 4), 'utf8');
+    fs.writeFileSync(drone_info_file, JSON.stringify(conf.drone, null, 4), 'utf8');
 }
 
 

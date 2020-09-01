@@ -53,7 +53,7 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require( 'terminal-kit' ).terminal ;
 
-var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'SYSID_THISMAV', 'Reboot', 'Quit' ] ;
+var command_items = [ 'Arm' , 'Takeoff' , 'Mode', 'GoTo' , 'GoTo_Alt' , 'Hold', 'Change_Speed', 'Land', 'Change_Alt', 'Start_Mission', 'WP_YAW_BEHAVIOR', 'WPNAV_SPEED', 'WPNAV_SPEED_DN', 'SYSID_THISMAV', 'Reboot', 'Quit' ] ;
 
 var alt_items = ['cancel', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150'] ;
 
@@ -174,10 +174,13 @@ function startMenu() {
                 else if (response.selectedText === 'Reboot') {
                     term.eraseDisplayBelow();
                     term('Are you sure? (Y / N): ');
-
                     term.inputField(
                         {history: history, autoComplete: ['cancel', 'Y', 'N'], autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input.toLowerCase() === 'n' || input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -207,6 +210,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if (input === 'cancel') {
                                 setTimeout(startMenu, back_menu_delay);
                             }
@@ -245,10 +252,13 @@ function startMenu() {
                 else if (response.selectedText === 'Mode') {
                     term.eraseDisplayBelow();
                     term('Select Mode : ');
-
                     term.inputField(
                         {history: history, autoComplete: mode_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -280,50 +290,57 @@ function startMenu() {
                     term.eraseDisplayBelow();
                     term('Select Position : ');
 
-                    term.inputField(
-                        {history: history, autoComplete: goto_all_position, autoCompleteMenu: true},
-                        function (error, input) {
-                            if(input.split('|')[0] === 'cancel') {
-                                setTimeout(startMenu,  back_menu_delay);
-                            }
-                            else {
-                                cur_goto_position = input;
-                                history.push(input);
-                                history.shift();
+                    term.singleColumnMenu( goto_all_position , function( error , response ) {
+                        term( '\n' ).eraseLineAfter.green(
+                            "#%s selected: %s (%s,%s)\n" ,
+                            response.selectedIndex ,
+                            response.selectedText ,
+                            response.x ,
+                            response.y
+                        ) ;
 
-                                var arr_goto_all_position = cur_goto_position.split('|');
+                        var input = response.selectedText;
 
-                                var command_delay = 0;
-                                for (var idx in conf.drone) {
-                                    if (conf.drone.hasOwnProperty(idx)) {
-                                        cur_drone_selected = conf.drone[idx].name;
-
-                                        // set GUIDED Mode
-                                        var custom_mode = 4;
-                                        var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
-                                        base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                                        send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
-
-                                        cur_goto_position = arr_goto_all_position[goto_all_index[conf.drone[idx].name]];
-
-                                        command_delay++;
-
-                                        var arr_cur_goto_position = cur_goto_position.split(':');
-                                        var lat = parseFloat(arr_cur_goto_position[0]);
-                                        var lon = parseFloat(arr_cur_goto_position[1]);
-                                        var alt = parseFloat(arr_cur_goto_position[2]);
-                                        var speed = parseFloat(arr_cur_goto_position[3]);
-
-                                        setTimeout(send_goto_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
-
-                                        setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
-                                    }
-                                }
-
-                                setTimeout(startMenu,  back_menu_delay + back_menu_delay * (conf.drone.length+1));
-                            }
+                        if(input.split('|')[0] === 'cancel') {
+                            setTimeout(startMenu,  back_menu_delay);
                         }
-                    );
+                        else {
+                            cur_goto_position = input;
+                            history.push(input);
+                            history.shift();
+
+                            var arr_goto_all_position = cur_goto_position.split('|');
+
+                            var command_delay = 0;
+                            for (var idx in conf.drone) {
+                                if (conf.drone.hasOwnProperty(idx)) {
+                                    cur_drone_selected = conf.drone[idx].name;
+
+                                    // set GUIDED Mode
+                                    var custom_mode = 4;
+                                    var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                                    base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                                    send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+                                    cur_goto_position = arr_goto_all_position[goto_all_index[conf.drone[idx].name]];
+
+                                    command_delay++;
+
+                                    var arr_cur_goto_position = cur_goto_position.split(':');
+                                    var lat = parseFloat(arr_cur_goto_position[0]);
+                                    var lon = parseFloat(arr_cur_goto_position[1]);
+                                    var alt = parseFloat(arr_cur_goto_position[2]);
+                                    var speed = parseFloat(arr_cur_goto_position[3]);
+
+                                    setTimeout(send_goto_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
+
+                                    setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                }
+                            }
+
+                            setTimeout(startMenu,  back_menu_delay + back_menu_delay * (conf.drone.length+1));
+                        }
+                    } ) ;
                 }
                 else if (response.selectedText === 'GoTo_Alt') {
                     term.eraseDisplayBelow();
@@ -332,6 +349,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -372,6 +393,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -409,6 +434,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -450,8 +479,8 @@ function startMenu() {
                 else if (response.selectedText === 'Hold') {
                     term.eraseDisplayBelow();
 
-                    var command_delay = 0;
-                    for (var idx in conf.drone) {
+                    command_delay = 0;
+                    for (idx in conf.drone) {
                         if (conf.drone.hasOwnProperty(idx)) {
                             cur_drone_selected = conf.drone[idx].name;
 
@@ -474,8 +503,8 @@ function startMenu() {
                 }
                 else if (response.selectedText === 'Land') {
                     term.eraseDisplayBelow();
-                    var command_delay = 0;
-                    for (var idx in conf.drone) {
+                    command_delay = 0;
+                    for (idx in conf.drone) {
                         if (conf.drone.hasOwnProperty(idx)) {
                             cur_drone_selected = conf.drone[idx].name;
 
@@ -506,43 +535,90 @@ function startMenu() {
                 }
                 else if (response.selectedText === 'WP_YAW_BEHAVIOR') {
                     term.eraseDisplayBelow();
-                    term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
+                    term('Select Value: ');
 
-                    term.inputField(
-                        {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
-                        function (error, input) {
-                            if(input === 'cancel') {
-                                setTimeout(startMenu,  back_menu_delay);
-                            }
-                            else {
-                                history.push(input);
-                                history.shift();
-
-                                var param_value = parseInt(input, 10);
-
-                                if(param_value > 3) {
-                                    param_value = 3;
-                                }
-
-                                if(param_value < 0) {
-                                    param_value = 0
-                                }
-
-                                var command_delay = 0;
-                                for (var idx in conf.drone) {
-                                    if (conf.drone.hasOwnProperty(idx)) {
-                                        cur_drone_selected = conf.drone[idx].name;
-
-                                        command_delay++;
-
-                                        setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
-                                    }
-                                }
-
-                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
-                            }
+                    term.singleColumnMenu( ['cancel', '0: Never change yaw', '1: Face next waypoint', '2: Face next waypoint except RTL', '3: Face along GPS course'] , function( error , response ) {
+                        term( '\n' ).eraseLineAfter.green(
+                            "#%s selected: %s (%s,%s)\n" ,
+                            response.selectedIndex ,
+                            response.selectedText ,
+                            response.x ,
+                            response.y
+                        ) ;
+                        var input = response.selectedText;
+                        if(input === 'cancel') {
+                            setTimeout(startMenu,  back_menu_delay);
                         }
-                    );
+                        else {
+                            history.push(input);
+                            history.shift();
+
+                            var param_value = parseInt(response.selectedIndex, 10) - 1;
+
+                            if(param_value > 3) {
+                                param_value = 3;
+                            }
+
+                            if(param_value < 0) {
+                                param_value = 0
+                            }
+
+                            console.log(param_value);
+
+                            var command_delay = 0;
+                            for (var idx in conf.drone) {
+                                if (conf.drone.hasOwnProperty(idx)) {
+                                    cur_drone_selected = conf.drone[idx].name;
+
+                                    command_delay++;
+
+                                    setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+                                }
+                            }
+
+                            setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                        }
+                    } ) ;
+
+                    // term.inputField(
+                    //     {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
+                    //     function (error, input) {
+                    //         term( '\n' ).eraseLineAfter.green(
+                    //             "%s selected\n" ,
+                    //             input
+                    //         ) ;
+                    //         if(input === 'cancel') {
+                    //             setTimeout(startMenu,  back_menu_delay);
+                    //         }
+                    //         else {
+                    //             history.push(input);
+                    //             history.shift();
+                    //
+                    //             var param_value = parseInt(input, 10);
+                    //
+                    //             if(param_value > 3) {
+                    //                 param_value = 3;
+                    //             }
+                    //
+                    //             if(param_value < 0) {
+                    //                 param_value = 0
+                    //             }
+                    //
+                    //             var command_delay = 0;
+                    //             for (var idx in conf.drone) {
+                    //                 if (conf.drone.hasOwnProperty(idx)) {
+                    //                     cur_drone_selected = conf.drone[idx].name;
+                    //
+                    //                     command_delay++;
+                    //
+                    //                     setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+                    //                 }
+                    //             }
+                    //
+                    //             setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                    //         }
+                    //     }
+                    // );
                 }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
@@ -551,6 +627,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -576,6 +656,50 @@ function startMenu() {
                                         command_delay++;
 
                                         setTimeout(send_wpnav_speed_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                    }
+                                }
+
+                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                            }
+                        }
+                    );
+                }
+                else if (response.selectedText === 'WPNAV_SPEED_DN') {
+                    term.eraseDisplayBelow();
+                    term('Select Speed (1 - 12 (m/s)): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+                        function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                var speed = parseFloat(input);
+
+                                if(speed > 12.0) {
+                                    speed = 12.0;
+                                }
+
+                                if(speed < 1) {
+                                    speed = 1.0
+                                }
+
+                                var command_delay = 0;
+                                for (var idx in conf.drone) {
+                                    if (conf.drone.hasOwnProperty(idx)) {
+                                        cur_drone_selected = conf.drone[idx].name;
+
+                                        command_delay++;
+
+                                        setTimeout(send_wpnav_speed_dn_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
                                     }
                                 }
 
@@ -625,6 +749,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if (input === 'cancel') {
                                 setTimeout(startMenu, back_menu_delay);
                             } else {
@@ -658,6 +786,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: mode_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -680,37 +812,43 @@ function startMenu() {
                     term.eraseDisplayBelow();
                     term('Select Position : ');
 
-                    term.inputField(
-                        {history: history, autoComplete: goto_position[cur_drone_selected], autoCompleteMenu: true},
-                        function (error, input) {
-                            if(input === 'cancel') {
-                                setTimeout(startMenu,  back_menu_delay);
-                            }
-                            else {
-                                cur_goto_position = input;
-                                history.push(input);
-                                history.shift();
+                    term.singleColumnMenu( goto_position[cur_drone_selected] , function( error , response ) {
+                        term( '\n' ).eraseLineAfter.green(
+                            "#%s selected: %s (%s,%s)\n" ,
+                            response.selectedIndex ,
+                            response.selectedText ,
+                            response.x ,
+                            response.y
+                        ) ;
 
-                                // set GUIDED Mode
-                                var custom_mode = 4;
-                                var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
-                                base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                                send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
-
-                                var arr_cur_goto_position = cur_goto_position.split(':');
-                                var lat = parseFloat(arr_cur_goto_position[0]);
-                                var lon = parseFloat(arr_cur_goto_position[1]);
-                                var alt = parseFloat(arr_cur_goto_position[2]);
-                                var speed = parseFloat(arr_cur_goto_position[3]);
-
-                                setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
-
-                                setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
-
-                                setTimeout(startMenu,  back_menu_delay + back_menu_delay + back_menu_delay);
-                            }
+                        var input = response.selectedText;
+                        if(input === 'cancel') {
+                            setTimeout(startMenu,  back_menu_delay);
                         }
-                    );
+                        else {
+                            cur_goto_position = input;
+                            history.push(input);
+                            history.shift();
+
+                            // set GUIDED Mode
+                            var custom_mode = 4;
+                            var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                            base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                            send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+                            var arr_cur_goto_position = cur_goto_position.split(':');
+                            var lat = parseFloat(arr_cur_goto_position[0]);
+                            var lon = parseFloat(arr_cur_goto_position[1]);
+                            var alt = parseFloat(arr_cur_goto_position[2]);
+                            var speed = parseFloat(arr_cur_goto_position[3]);
+
+                            setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
+
+                            setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+
+                            setTimeout(startMenu,  back_menu_delay + back_menu_delay + back_menu_delay);
+                        }
+                    } ) ;
                 }
                 else if (response.selectedText === 'GoTo_Alt') {
                     term.eraseDisplayBelow();
@@ -719,6 +857,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -753,6 +895,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: alt_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -781,6 +927,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -844,34 +994,72 @@ function startMenu() {
                 }
                 else if (response.selectedText === 'WP_YAW_BEHAVIOR') {
                     term.eraseDisplayBelow();
-                    term('Select Value (\n0: Never change yaw, \n1: Face next waypoint, \n2: Face next waypoint except RTL, \n3: Face along GPS course\n): ');
+                    term('Select Value: ');
 
-                    term.inputField(
-                        {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
-                        function (error, input) {
-                            if(input === 'cancel') {
-                                setTimeout(startMenu,  back_menu_delay);
-                            }
-                            else {
-                                history.push(input);
-                                history.shift();
-
-                                var param_value = parseInt(input, 10);
-
-                                if(param_value > 3) {
-                                    param_value = 3;
-                                }
-
-                                if(param_value < 0) {
-                                    param_value = 0
-                                }
-
-                                setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
-
-                                setTimeout(startMenu,  back_menu_delay * 2);
-                            }
+                    term.singleColumnMenu( ['cancel', '0: Never change yaw', '1: Face next waypoint', '2: Face next waypoint except RTL', '3: Face along GPS course'] , function( error , response ) {
+                        term('\n').eraseLineAfter.green(
+                            "#%s selected: %s (%s,%s)\n",
+                            response.selectedIndex,
+                            response.selectedText,
+                            response.x,
+                            response.y
+                        );
+                        var input = response.selectedText;
+                        if(input === 'cancel') {
+                            setTimeout(startMenu,  back_menu_delay);
                         }
-                    );
+                        else {
+                            history.push(input);
+                            history.shift();
+
+                            var param_value = parseInt(response.selectedIndex, 10) - 1;
+
+                            if(param_value > 3) {
+                                param_value = 3;
+                            }
+
+                            if(param_value < 0) {
+                                param_value = 0
+                            }
+
+                            console.log(param_value);
+
+                            setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+
+                            setTimeout(startMenu,  back_menu_delay * 2);
+                        }
+                    });
+                    //
+                    // term.inputField(
+                    //     {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
+                    //     function (error, input) {
+                    //         term( '\n' ).eraseLineAfter.green(
+                    //             "%s selected\n" ,
+                    //             input
+                    //         ) ;
+                    //         if(input === 'cancel') {
+                    //             setTimeout(startMenu,  back_menu_delay);
+                    //         }
+                    //         else {
+                    //             history.push(input);
+                    //             history.shift();
+                    //
+                    //             var param_value = parseInt(input, 10);
+                    //
+                    //             if(param_value > 3) {
+                    //                 param_value = 3;
+                    //             }
+                    //
+                    //             if(param_value < 0) {
+                    //                 param_value = 0
+                    //             }
+                    //
+                    //             setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
+                    //
+                    //             setTimeout(startMenu,  back_menu_delay * 2);
+                    //         }
+                    //     }
+                    // );
                 }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
@@ -880,6 +1068,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: speed_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -909,6 +1101,46 @@ function startMenu() {
                         }
                     );
                 }
+                else if (response.selectedText === 'WPNAV_SPEED_DN') {
+                    term.eraseDisplayBelow();
+                    term('Select Speed (1 - 12 (m/s)): ');
+
+                    term.inputField(
+                        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+                        function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
+                            if(input === 'cancel') {
+                                setTimeout(startMenu,  back_menu_delay);
+                            }
+                            else {
+                                history.push(input);
+                                history.shift();
+
+                                // var custom_mode = 4;
+                                // var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                                // base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                                // send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+                                var speed = parseFloat(input);
+
+                                if(speed > 12.0) {
+                                    speed = 12.0;
+                                }
+
+                                if(speed < 1) {
+                                    speed = 1.0
+                                }
+
+                                setTimeout(send_wpnav_speed_dn_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+
+                                setTimeout(startMenu,  back_menu_delay * 2);
+                            }
+                        }
+                    );
+                }
                 else if (response.selectedText === 'SYSID_THISMAV') {
                     term.eraseDisplayBelow();
                     term('Select id (random, 10 - 250): ');
@@ -916,6 +1148,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: id_items, autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -931,15 +1167,15 @@ function startMenu() {
                                 }
 
                                 if(id_val > 250) {
-                                    term.red('\nid is out of range.\n');
+                                    term.red('id is out of range.\n');
                                     setTimeout(startMenu,  back_menu_delay);
                                 }
                                 else if(id_val < 10) {
-                                    term.red('\nid is out of range.\n');
+                                    term.red('id is out of range.\n');
                                     setTimeout(startMenu,  back_menu_delay);
                                 }
                                 else {
-                                    term.red('\nThe selected id is %d\n', id_val);
+                                    term.red('The selected id is %d\n', id_val);
                                     setTimeout(send_sysid_thismav_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], id_val);
 
                                     for (var idx in conf.drone) {
@@ -951,7 +1187,7 @@ function startMenu() {
                                         }
                                     }
 
-                                    fs.writeFileSync('drone_info.json', JSON.stringify(conf.drone, null, 4), 'utf8');
+                                    fs.writeFileSync(drone_info_file, JSON.stringify(conf.drone, null, 4), 'utf8');
 
                                     setTimeout(startMenu,  back_menu_delay * 2);
                                 }
@@ -966,6 +1202,10 @@ function startMenu() {
                     term.inputField(
                         {history: history, autoComplete: ['cancel', 'Y', 'N'], autoCompleteMenu: true},
                         function (error, input) {
+                            term( '\n' ).eraseLineAfter.green(
+                                "%s selected\n" ,
+                                input
+                            ) ;
                             if(input.toLowerCase() === 'n' || input === 'cancel') {
                                 setTimeout(startMenu,  back_menu_delay);
                             }
@@ -1141,7 +1381,7 @@ function send_reboot_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend Reboot command to %s\n', target_name);
+            term.blue('Send Reboot command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1284,7 +1524,7 @@ function send_set_mode_command(target_name, pub_topic, target_sys_id, base_mode,
         }
         else {
             //console.log('msg: ', msg);
-            term.blue('\nSend Set Mode command to %s\n', target_name);
+            term.blue('Send Set Mode command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             // console.log('msg_seq : ', msg.slice(2,3));
             //mqtt_client.publish(my_cnt_name, msg.toString('hex'));
@@ -1357,7 +1597,7 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
         }
         else {
             //console.log('msg: ', msg);
-            term.blue('\nSend GoTo command to %s\n', target_name);
+            term.blue('Send GoTo command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             // console.log('msg_seq : ', msg.slice(2,3));
             //mqtt_client.publish(my_cnt_name, msg.toString('hex'));
@@ -1442,7 +1682,7 @@ function send_land_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend GoTo command to %s\n', target_name);
+            term.blue('Send GoTo command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1472,7 +1712,7 @@ function send_change_speed_command(target_name, pub_topic, target_sys_id, target
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend Change_Speed command to %s\n', target_name);
+            term.blue('Send Change_Speed command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1502,7 +1742,7 @@ function send_change_altitude_command(target_name, pub_topic, target_sys_id, tar
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend Change Altitude command to %s\n', target_name);
+            term.blue('Send Change Altitude command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1526,7 +1766,7 @@ function send_wp_yaw_behavior_param_set_command(target_name, pub_topic, target_s
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend WP_YAW_HEHAVIOR param set command to %s\n', target_name);
+            term.blue('Send WP_YAW_HEHAVIOR param set command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1551,7 +1791,7 @@ function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_i
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend WPNAV Speed command to %s\n', target_name);
+            term.blue('Send WPNAV Speed command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1575,7 +1815,7 @@ function send_wpnav_speed_dn_param_set_command(target_name, pub_topic, target_sy
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend WPNAV Speed DN to %s\n', target_name);
+            term.blue('Send WPNAV Speed DN to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -1623,7 +1863,7 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
             console.log("mavlink message is null");
         }
         else {
-            term.blue('\nSend SYSID_THISMAV command to %s\n', target_name);
+            term.blue('Send SYSID_THISMAV command to %s\n', target_name);
             term.red('msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
