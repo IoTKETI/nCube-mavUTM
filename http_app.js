@@ -471,6 +471,10 @@ function send_to_gcs(content_each) {
                 var alt = content_each.substr(base_offset, 8).toLowerCase();
                 base_offset += 8;
                 var relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var vx = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var vy = content_each.substr(base_offset, 4).toLowerCase();
             }
             else {
                 base_offset = 12;
@@ -483,6 +487,10 @@ function send_to_gcs(content_each) {
                 alt = content_each.substr(base_offset, 8).toLowerCase();
                 base_offset += 8;
                 relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                vx = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                vy = content_each.substr(base_offset, 4).toLowerCase();
             }
 
             var sys_id = parseInt(sysid, 16).toString();
@@ -495,6 +503,8 @@ function send_to_gcs(content_each) {
             gpi[sys_id].lon = Buffer.from(lon, 'hex').readInt32LE(0);
             gpi[sys_id].alt = Buffer.from(alt, 'hex').readInt32LE(0);
             gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
+            gpi[sys_id].vx = Buffer.from(vx, 'hex').readInt16LE(0);
+            gpi[sys_id].vy = Buffer.from(vy, 'hex').readInt16LE(0);
         }
 
         // if(sysid == '37' ) {

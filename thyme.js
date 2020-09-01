@@ -66,7 +66,7 @@ catch (e) {
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
-conf.use_terminal = 'disable'; //'enable';
+conf.use_terminal = 'enable'; //'enable';
 
 
 if(conf.use_terminal === 'enable') {

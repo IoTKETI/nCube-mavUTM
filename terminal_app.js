@@ -107,6 +107,8 @@ for (var idx in conf.drone) {
         gpi[conf.drone[idx].system_id].lon = 0;
         gpi[conf.drone[idx].system_id].alt = 0;
         gpi[conf.drone[idx].system_id].relative_alt = 0;
+        gpi[conf.drone[idx].system_id].vx = 0;
+        gpi[conf.drone[idx].system_id].vy = 0;
 
         target_pub_topic[conf.drone[idx].name] = '/Mobius/' + conf.gcs + '/GCS_Data/' + conf.drone[idx].name;
     }
@@ -456,6 +458,7 @@ function startMenu() {
                                 }
 
                                 var command_delay = 0;
+                                var max_gap = 0;
                                 for (var idx in conf.drone) {
                                     if (conf.drone.hasOwnProperty(idx)) {
                                         cur_drone_selected = conf.drone[idx].name;
@@ -467,11 +470,37 @@ function startMenu() {
                                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                                         send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
 
-                                        setTimeout(send_change_speed_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                        var cur_speed = Math.abs(Math.sqrt((gpi[target_system_id[cur_drone_selected]].vx / 100) * (gpi[target_system_id[cur_drone_selected]].vx / 100) + (gpi[target_system_id[cur_drone_selected]].vy / 100) * (gpi[target_system_id[cur_drone_selected]].vy / 100)));
+                                        cur_speed = Math.round(cur_speed);
+                                        var gap = 0;
+                                        if(cur_speed > speed) {
+                                            gap = 0;
+                                            for(var i = cur_speed - 1; i > speed; i--) {
+                                                setTimeout(send_change_speed_command, back_menu_delay * command_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], i);
+                                                gap++;
+                                            }
+                                            setTimeout(send_change_speed_command, back_menu_delay * command_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                        }
+                                        else if(cur_speed < speed) {
+                                            gap = 0;
+                                            for(i = cur_speed + 1; i < speed; i++) {
+                                                setTimeout(send_change_speed_command, back_menu_delay * command_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], i);
+                                                gap++;
+                                            }
+                                            setTimeout(send_change_speed_command, back_menu_delay * command_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                        }
+                                        else {
+                                            gap = 0;
+                                            setTimeout(send_change_speed_command, back_menu_delay * command_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                        }
+
+                                        if(max_gap < gap) {
+                                            max_gap = gap;
+                                        }
                                     }
                                 }
 
-                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
+                                setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1) + (250 * max_gap));
                             }
                         }
                     );
@@ -579,46 +608,6 @@ function startMenu() {
                             setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
                         }
                     } ) ;
-
-                    // term.inputField(
-                    //     {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
-                    //     function (error, input) {
-                    //         term( '\n' ).eraseLineAfter.green(
-                    //             "%s selected\n" ,
-                    //             input
-                    //         ) ;
-                    //         if(input === 'cancel') {
-                    //             setTimeout(startMenu,  back_menu_delay);
-                    //         }
-                    //         else {
-                    //             history.push(input);
-                    //             history.shift();
-                    //
-                    //             var param_value = parseInt(input, 10);
-                    //
-                    //             if(param_value > 3) {
-                    //                 param_value = 3;
-                    //             }
-                    //
-                    //             if(param_value < 0) {
-                    //                 param_value = 0
-                    //             }
-                    //
-                    //             var command_delay = 0;
-                    //             for (var idx in conf.drone) {
-                    //                 if (conf.drone.hasOwnProperty(idx)) {
-                    //                     cur_drone_selected = conf.drone[idx].name;
-                    //
-                    //                     command_delay++;
-                    //
-                    //                     setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
-                    //                 }
-                    //             }
-                    //
-                    //             setTimeout(startMenu,  back_menu_delay * (conf.drone.length+1));
-                    //         }
-                    //     }
-                    // );
                 }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
@@ -953,9 +942,32 @@ function startMenu() {
                                     speed = 1.0
                                 }
 
-                                setTimeout(send_change_speed_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                var cur_speed = Math.abs(Math.sqrt((gpi[target_system_id[cur_drone_selected]].vx / 100) * (gpi[target_system_id[cur_drone_selected]].vx / 100) + (gpi[target_system_id[cur_drone_selected]].vy / 100) * (gpi[target_system_id[cur_drone_selected]].vy / 100)));
+                                cur_speed = Math.round(cur_speed);
+                                console.log(cur_speed);
+                                var gap = 0;
+                                if(cur_speed > speed) {
+                                    gap = 0;
+                                    for(var i = cur_speed - 1; i > speed; i--) {
+                                        setTimeout(send_change_speed_command, back_menu_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], i);
+                                        gap++;
+                                    }
+                                    setTimeout(send_change_speed_command, back_menu_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                }
+                                else if(cur_speed < speed) {
+                                    gap = 0;
+                                    for(i = cur_speed + 1; i < speed; i++) {
+                                        setTimeout(send_change_speed_command, back_menu_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], i);
+                                        gap++;
+                                    }
+                                    setTimeout(send_change_speed_command, back_menu_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                }
+                                else {
+                                    gap = 0;
+                                    setTimeout(send_change_speed_command, back_menu_delay + (250 * gap), cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+                                }
 
-                                setTimeout(startMenu,  back_menu_delay * 2);
+                                setTimeout(startMenu,  back_menu_delay * 2 + (250 * gap));
                             }
                         }
                     );
@@ -1029,37 +1041,6 @@ function startMenu() {
                             setTimeout(startMenu,  back_menu_delay * 2);
                         }
                     });
-                    //
-                    // term.inputField(
-                    //     {history: history, autoComplete: ['cancel', '0', '1', '2', '3'], autoCompleteMenu: true},
-                    //     function (error, input) {
-                    //         term( '\n' ).eraseLineAfter.green(
-                    //             "%s selected\n" ,
-                    //             input
-                    //         ) ;
-                    //         if(input === 'cancel') {
-                    //             setTimeout(startMenu,  back_menu_delay);
-                    //         }
-                    //         else {
-                    //             history.push(input);
-                    //             history.shift();
-                    //
-                    //             var param_value = parseInt(input, 10);
-                    //
-                    //             if(param_value > 3) {
-                    //                 param_value = 3;
-                    //             }
-                    //
-                    //             if(param_value < 0) {
-                    //                 param_value = 0
-                    //             }
-                    //
-                    //             setTimeout(send_wp_yaw_behavior_param_set_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], param_value);
-                    //
-                    //             setTimeout(startMenu,  back_menu_delay * 2);
-                    //         }
-                    //     }
-                    // );
                 }
                 else if (response.selectedText === 'WPNAV_SPEED') {
                     term.eraseDisplayBelow();
