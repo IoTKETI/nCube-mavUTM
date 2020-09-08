@@ -42,7 +42,7 @@ conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
-global.drone_info_file = 'armi_route_2.json';
+global.drone_info_file = 'army_route_2.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
