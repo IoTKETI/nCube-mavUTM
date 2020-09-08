@@ -42,7 +42,7 @@ conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
-global.drone_info_file = 'drone_info.json';
+global.drone_info_file = 'armi_route_2.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
@@ -66,7 +66,7 @@ catch (e) {
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
-conf.use_terminal = 'disable'; //'enable';
+conf.use_terminal = 'enable'; //'enable';
 
 
 if(conf.use_terminal === 'enable') {
