@@ -459,9 +459,9 @@ function send_to_gcs(content_each) {
             hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
         }
 
-        else if (msgid == '21') { // #33
+        else if (msgid == '21') { // #33 - global_position_int
             if (ver == 'fd') {
-                var base_offset = 20;
+                base_offset = 20;
                 var time_boot_ms = content_each.substr(base_offset, 8).toLowerCase();
                 base_offset += 8;
                 var lat = content_each.substr(base_offset, 8).toLowerCase();
@@ -493,7 +493,7 @@ function send_to_gcs(content_each) {
                 vy = content_each.substr(base_offset, 4).toLowerCase();
             }
 
-            var sys_id = parseInt(sysid, 16).toString();
+            sys_id = parseInt(sysid, 16).toString();
             if(!gpi.hasOwnProperty(sys_id)) {
                 gpi[sys_id] = {};
             }
@@ -505,6 +505,45 @@ function send_to_gcs(content_each) {
             gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
             gpi[sys_id].vx = Buffer.from(vx, 'hex').readInt16LE(0);
             gpi[sys_id].vy = Buffer.from(vy, 'hex').readInt16LE(0);
+        }
+
+        else if (msgid == '16') { // #22 PARAM_VALUE
+            if (ver == 'fd') {
+                base_offset = 20;
+                var param_id = content_each.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                var param_value = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var param_type = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var param_count = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var param_index = content_each.substr(base_offset, 4).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                param_id = content_each.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                param_value = content_each.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                param_type = content_each.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                param_count = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                param_index = content_each.substr(base_offset, 4).toLowerCase();
+            }
+
+            let buf = Buffer.from(param_id, "hex");
+            param_id = buf.toString("utf8");
+
+            //console.log(param_id);
+
+            //if(param_id == 'RC')
+
+            sys_id = parseInt(sysid, 16).toString();
+            // if(!gpi.hasOwnProperty(sys_id)) {
+            //     gpi[sys_id] = {};
+            // }
         }
 
         // if(sysid == '37' ) {

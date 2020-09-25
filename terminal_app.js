@@ -702,6 +702,7 @@ function allHoldMenu() {
 
             command_delay++;
 
+            // set GUIDED Mode
             var custom_mode = 4;
             var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
@@ -709,7 +710,7 @@ function allHoldMenu() {
 
             var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
             var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
-            var alt = gpi[target_system_id[cur_drone_selected]].alt;
+            var alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
 
             setTimeout(send_goto_command, back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
         }
@@ -761,14 +762,14 @@ function calcAllDistance(goto_position) {
 
             var cur_lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
             var cur_lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
-            var cur_alt = gpi[target_system_id[cur_drone_selected]].alt;
+            var cur_alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
 
             var arr_cur_goto_position = cur_goto_position.split(':');
             var tar_lat = parseFloat(arr_cur_goto_position[0]);
             var tar_lon = parseFloat(arr_cur_goto_position[1]);
             var tar_alt = parseFloat(arr_cur_goto_position[2]);
 
-            dist += Math.abs(Math.sqrt(Math.pow((tar_lat - cur_lat), 2) + Math.pow((tar_lon - cur_lon), 2) + Math.pow((tar_alt - cur_alt), 2)));
+            dist += Math.sqrt(Math.pow((tar_lat - cur_lat), 2) + Math.pow((tar_lon - cur_lon), 2) + Math.pow((tar_alt - cur_alt), 2));
         }
     }
 
@@ -1317,9 +1318,6 @@ function eachGotoAltMenu() {
                 var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
                 var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
 
-                console.log('lat : ' + lat)
-                console.log('lon : ' + lon)
-
                 setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
 
                 setTimeout(eachMenu,  back_menu_delay * 2);
@@ -1338,7 +1336,7 @@ function eachHoldMenu() {
 
     var lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
     var lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
-    var alt = gpi[target_system_id[cur_drone_selected]].relative_alt;
+    var alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
 
     setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
 
@@ -2079,12 +2077,60 @@ setInterval(function () {
             if (conf.drone.hasOwnProperty(idx)) {
                 cur_drone_selected = conf.drone[idx].name;
 
-                var cur_lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
-                var cur_lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
-                var cur_alt = gpi[target_system_id[cur_drone_selected]].alt;
+                var cur_lat = (gpi[target_system_id[cur_drone_selected]].lat / 10000000);
+                var cur_lon = (gpi[target_system_id[cur_drone_selected]].lon / 10000000);
+                var cur_alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
+                var cur_speed = Math.sqrt(Math.pow(gpi[target_system_id[cur_drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[cur_drone_selected]].vy, 2)) / 100;
 
-                term.moveTo.cyan(1, parseInt(idx, 10) + 2, "[%s] %f : %f : %f", cur_drone_selected, cur_lat, cur_lon, cur_alt);
+                term.moveTo.cyan(1, parseInt(idx, 10) + 2, "[%s] %s:%s:%s:%s", cur_drone_selected, cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1));
             }
         }
     }
 }, 1000);
+
+function param_get_command(target_name, pub_topic, target_sys_id, param_id) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = param_id;
+    btn_params.param_index = -1;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_REQUEST_READ, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('Send SYSID_THISMAV command to %s\n', target_name);
+            term.red('msg: ' +  msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch( ex )      {
+        console.log( '[ERROR] ' + ex );
+    }
+}
+
+
+var moment = require('moment');
+
+function save_current_position() {
+    var cur_pos = {};
+    for (var idx in conf.drone) {
+        if (conf.drone.hasOwnProperty(idx)) {
+            cur_drone_selected = conf.drone[idx].name;
+
+            cur_pos[cur_drone_selected]
+            var cur_lat = (gpi[target_system_id[cur_drone_selected]].lat / 10000000);
+            var cur_lon = (gpi[target_system_id[cur_drone_selected]].lon / 10000000);
+            var cur_alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
+            var cur_speed = Math.sqrt(Math.pow(gpi[target_system_id[cur_drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[cur_drone_selected]].vy, 2)) / 100;
+
+            cur_pos[cur_drone_selected] = cur_lat + ':' + cur_lon + ':' + cur_alt + ':' + cur_speed;
+        }
+    }
+
+    var timestamp = moment().format('MM-DD-HH-mm-ss');
+
+    fs.writeFileSync('cur_pos_' + timestamp + '.json', JSON.stringify(cur_pos, null, 4), 'utf8');
+}
