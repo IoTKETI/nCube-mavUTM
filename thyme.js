@@ -33,7 +33,7 @@ conf.cse.host = '203.253.128.161'; //'150.197.3.100'; //'203.253.128.161';
 conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
-conf.commLink = 'tcp'; //'udp'; //'tcp';
+conf.commLink = 'udp'; //'udp'; //'tcp';
 
 // AE core
 conf.aei = "SgMavUTM"
@@ -42,7 +42,7 @@ conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
-global.drone_info_file = 'army_route_5.json';
+global.drone_info_file = 'drone_info.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));

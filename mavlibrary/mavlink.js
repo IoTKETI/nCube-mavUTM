@@ -1895,6 +1895,8 @@ mavlink.messages.param_request_read = function(target_system, target_component, 
 mavlink.messages.param_request_read.prototype = new mavlink.message;
 
 mavlink.messages.param_request_read.prototype.pack = function(mav) {
+    mav.seq = (mav.seq + sequence) % 256;	// add
+    sequence++;	// add
     return mavlink.message.prototype.pack.call(this, mav, this.crc_extra, jspack.Pack(this.format, [ this.param_index, this.target_system, this.target_component, this.param_id]));
 }
 

@@ -387,7 +387,18 @@ global.hb = {};
 hb.HEARTBEAT = {};
 
 global.gpi = {};
-
+global.rc1_max = {};
+global.rc1_min = {};
+global.rc1_trim = {};
+global.rc2_max = {};
+global.rc2_min = {};
+global.rc2_trim = {};
+global.rc3_max = {};
+global.rc3_min = {};
+global.rc3_trim = {};
+global.rc4_max = {};
+global.rc4_min = {};
+global.rc4_trim = {};
 
 function send_to_gcs(content_each) {
     for(var idx in utm_socket) {
@@ -510,40 +521,166 @@ function send_to_gcs(content_each) {
         else if (msgid == '16') { // #22 PARAM_VALUE
             if (ver == 'fd') {
                 base_offset = 20;
-                var param_id = content_each.substr(base_offset, 32).toLowerCase();
-                base_offset += 32;
                 var param_value = content_each.substr(base_offset, 8).toLowerCase();
                 base_offset += 8;
-                var param_type = content_each.substr(base_offset, 2).toLowerCase();
-                base_offset += 2;
                 var param_count = content_each.substr(base_offset, 4).toLowerCase();
                 base_offset += 4;
                 var param_index = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var param_id = content_each.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                var param_type = content_each.substr(base_offset, 2).toLowerCase();
             }
             else {
                 base_offset = 12;
-                param_id = content_each.substr(base_offset, 32).toLowerCase();
-                base_offset += 32;
                 param_value = content_each.substr(base_offset, 8).toLowerCase();
                 base_offset += 8;
-                param_type = content_each.substr(base_offset, 2).toLowerCase();
-                base_offset += 2;
                 param_count = content_each.substr(base_offset, 4).toLowerCase();
                 base_offset += 4;
                 param_index = content_each.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                param_id = content_each.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                param_type = content_each.substr(base_offset, 2).toLowerCase();
             }
 
-            let buf = Buffer.from(param_id, "hex");
-            param_id = buf.toString("utf8");
-
-            //console.log(param_id);
-
-            //if(param_id == 'RC')
-
             sys_id = parseInt(sysid, 16).toString();
-            // if(!gpi.hasOwnProperty(sys_id)) {
-            //     gpi[sys_id] = {};
-            // }
+
+            var buf = Buffer.from(param_id, "hex");
+            param_id = buf.toString('ASCII');
+
+            if(param_id.includes('RC1_MIN')) {
+                //console.log(param_id);
+                if(!rc1_min.hasOwnProperty(sys_id)) {
+                    rc1_min[sys_id] = {};
+                }
+
+                rc1_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC1_MAX')) {
+                //console.log(param_id);
+                if(!rc1_max.hasOwnProperty(sys_id)) {
+                    rc1_max[sys_id] = {};
+                }
+
+                rc1_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC1_TRIM')) {
+                //console.log(param_id);
+                if(!rc1_trim.hasOwnProperty(sys_id)) {
+                    rc1_trim[sys_id] = {};
+                }
+
+                rc1_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC2_MIN')) {
+                //console.log(param_id);
+                if(!rc2_min.hasOwnProperty(sys_id)) {
+                    rc2_min[sys_id] = {};
+                }
+
+                rc2_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC2_MAX')) {
+                //console.log(param_id);
+                if(!rc2_max.hasOwnProperty(sys_id)) {
+                    rc2_max[sys_id] = {};
+                }
+
+                rc2_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC2_TRIM')) {
+                //console.log(param_id);
+                if(!rc2_trim.hasOwnProperty(sys_id)) {
+                    rc2_trim[sys_id] = {};
+                }
+
+                rc2_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC3_MIN')) {
+                //console.log(param_id);
+                if(!rc3_min.hasOwnProperty(sys_id)) {
+                    rc3_min[sys_id] = {};
+                }
+
+                rc3_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC3_MAX')) {
+                //console.log(param_id);
+                if(!rc3_max.hasOwnProperty(sys_id)) {
+                    rc3_max[sys_id] = {};
+                }
+
+                rc3_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC3_TRIM')) {
+                //console.log(param_id);
+                if(!rc3_trim.hasOwnProperty(sys_id)) {
+                    rc3_trim[sys_id] = {};
+                }
+
+                rc3_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC4_MIN')) {
+                //console.log(param_id);
+                if(!rc4_min.hasOwnProperty(sys_id)) {
+                    rc4_min[sys_id] = {};
+                }
+
+                rc4_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC4_MAX')) {
+                //console.log(param_id);
+                if(!rc4_max.hasOwnProperty(sys_id)) {
+                    rc4_max[sys_id] = {};
+                }
+
+                rc4_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if(param_id.includes('RC4_TRIM')) {
+                //console.log(param_id);
+                if(!rc4_trim.hasOwnProperty(sys_id)) {
+                    rc4_trim[sys_id] = {};
+                }
+
+                rc4_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
         }
 
         // if(sysid == '37' ) {
