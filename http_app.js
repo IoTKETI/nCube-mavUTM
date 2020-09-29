@@ -468,6 +468,14 @@ function send_to_gcs(content_each) {
             hb[sys_id].custom_mode = Buffer.from(custom_mode, 'hex').readUInt32LE(0);
             hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
             hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
+
+            if(rc3_trim.hasOwnProperty(sysid)) {
+                if (hb[sys_id].custom_mode == 0) {
+                    rc3_trim[sys_id].param_value = rc3_min[sysid].param_value;
+                } else {
+                    rc3_trim[sys_id].param_value = (rc3_max[sys_id] + rc3_min[sys_id]) / 2
+                }
+            }
         }
 
         else if (msgid == '21') { // #33 - global_position_int

@@ -74,11 +74,11 @@ var options = {
 
 
 var history = [ 'John' , 'Jack' , 'Joey' , 'Billy' , 'Bob' ] ;
-// var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
-//     'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'DRIFT', 'RESERVED_12', 'SPORT',
-//     'FLIP', 'AUTOTUNE', 'POS_HOLD', 'BRAKE', 'THROW', 'AVOID_ADSB', 'GUIDED_NOGPS', 'SAFE_RTL'];
 var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
-    'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'AUTOTUNE', 'POS_HOLD', 'SAFE_RTL'];
+    'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'DRIFT', 'RESERVED_12', 'SPORT',
+    'FLIP', 'AUTOTUNE', 'POS_HOLD', 'BRAKE', 'THROW', 'AVOID_ADSB', 'GUIDED_NOGPS', 'SAFE_RTL'];
+// var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
+//     'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'AUTOTUNE', 'POS_HOLD', 'SAFE_RTL'];
 
 var goto_position = {};
 var goto_all_position = [];
@@ -587,15 +587,18 @@ function allLandMenu() {
 
 var key = '';
 const map = new Map();
-map.set('w', 'throttle_high');
-map.set('a', 'yaw_left');
-map.set('s', 'throttle_low');
-map.set('d', 'yaw_right');
-map.set('UP', 'pitch_forward');
-map.set('LEFT', 'roll_left');
-map.set('DOWN', 'pitch_backward');
-map.set('RIGHT', 'roll_right');
-
+// map.set('w', 'throttle_high');
+// map.set('a', 'yaw_left');
+// map.set('s', 'throttle_low');
+// map.set('d', 'yaw_right');
+// map.set('UP', 'pitch_forward');
+// map.set('LEFT', 'roll_left');
+// map.set('DOWN', 'pitch_backward');
+// map.set('RIGHT', 'roll_right');
+map.set('w', 'pitch_forward');
+map.set('a', 'roll_left');
+map.set('s', 'pitch_backward');
+map.set('d', 'roll_right');
 const MAX_OFFSET = 384;
 const gap = 2;
 
@@ -611,81 +614,116 @@ term.on( 'key' , function( name , matches , data ) {
         process.exit() ;
     }
 
-    else if (map.has(name)) {
-        const command = map.get(name);
+    if(placeFlag === 'eachRealControlMenu') {
+        if (map.has(name)) {
+            const command = map.get(name);
 
-        if(command === 'throttle_high') {
-            throttle_offset+=gap;
-            if(throttle_offset >= MAX_OFFSET) {
-                throttle_offset = MAX_OFFSET;
+            if (command === 'throttle_high') {
+                throttle_offset += gap;
+                if (throttle_offset >= MAX_OFFSET) {
+                    throttle_offset = MAX_OFFSET;
+                }
+                console.log(command + ': ' + throttle_offset);
+            } else if (command === 'throttle_low') {
+                throttle_offset -= gap;
+                if (throttle_offset <= -MAX_OFFSET) {
+                    throttle_offset = -MAX_OFFSET;
+                }
+                console.log(command + ': ' + throttle_offset);
+            } else if (command === 'yaw_left') {
+                yaw_offset -= gap;
+                if (yaw_offset <= -MAX_OFFSET) {
+                    yaw_offset = -MAX_OFFSET;
+                }
+                console.log(command + ': ' + yaw_offset);
+            } else if (command === 'yaw_right') {
+                yaw_offset += gap;
+                if (yaw_offset >= MAX_OFFSET) {
+                    yaw_offset = MAX_OFFSET;
+                }
+                console.log(command + ': ' + yaw_offset);
+            } else if (command === 'pitch_forward') {
+                pitch_offset += gap;
+                if (pitch_offset >= MAX_OFFSET) {
+                    pitch_offset = MAX_OFFSET;
+                }
+                term.moveTo.cyan(1, 7, 'pitch:        ');
+                term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
+            } else if (command === 'pitch_backward') {
+                pitch_offset -= gap;
+                if (pitch_offset <= -MAX_OFFSET) {
+                    pitch_offset = -MAX_OFFSET;
+                }
+                term.moveTo.cyan(1, 7, 'pitch:        ');
+                term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
+            } else if (command === 'roll_left') {
+                roll_offset -= gap;
+                if (roll_offset <= -MAX_OFFSET) {
+                    roll_offset = -MAX_OFFSET;
+                }
+                term.moveTo.cyan(1, 8, 'roll:        ');
+                term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+            } else if (command === 'roll_right') {
+                roll_offset += gap;
+                if (roll_offset >= MAX_OFFSET) {
+                    roll_offset = MAX_OFFSET;
+                }
+                term.moveTo.cyan(1, 8, 'roll:        ');
+                term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
             }
-            console.log(command + ': ' + throttle_offset);
-        }
-        else if(command === 'throttle_low') {
-            throttle_offset-=gap;
-            if(throttle_offset <= -MAX_OFFSET) {
-                throttle_offset = -MAX_OFFSET;
-            }
-            console.log(command + ': ' + throttle_offset);
-        }
-        else if(command === 'yaw_left') {
-            yaw_offset-=gap;
-            if(yaw_offset <= -MAX_OFFSET) {
-                yaw_offset = -MAX_OFFSET;
-            }
-            console.log(command + ': ' + yaw_offset);
-        }
-        else if(command === 'yaw_right') {
-            yaw_offset+=gap;
-            if(yaw_offset >= MAX_OFFSET) {
-                yaw_offset = MAX_OFFSET;
-            }
-            console.log(command + ': ' + yaw_offset);
-        }
-        else if(command === 'pitch_forward') {
-            pitch_offset+=gap;
-            if(pitch_offset >= MAX_OFFSET) {
-                pitch_offset = MAX_OFFSET;
-            }
-            console.log(command + ': ' + pitch_offset);
-        }
-        else if(command === 'pitch_backward') {
-            pitch_offset-=gap;
-            if(pitch_offset <= -MAX_OFFSET) {
-                pitch_offset = -MAX_OFFSET;
-            }
-            console.log(command + ': ' + pitch_offset);
-        }
-        else if(command === 'roll_left') {
-            roll_offset-=gap;
-            if(roll_offset <= -MAX_OFFSET) {
-                roll_offset = -MAX_OFFSET;
-            }
-            console.log(command + ': ' + roll_offset);
-        }
-        else if(command === 'roll_right') {
-            roll_offset+=gap;
-            if(roll_offset >= MAX_OFFSET) {
-                roll_offset = MAX_OFFSET;
-            }
-            console.log(command + ': ' + roll_offset);
-        }
 
-        clearTimeout(keytimeout);
-        keytimeout = setTimeout(key_release, 750);
-    }
-    else {
-        console.log(`${name} is not defined as a key mapping.`);
+            clearTimeout(keytimeout);
+            keytimeout = setTimeout(key_release, 750);
+        }
+        else {
+            // console.log(`${name} is not defined as a key mapping.`);
+        }
     }
 });
 
 var keytimeout = setTimeout(key_release, 250);
 
 function key_release() {
-    throttle_offset = 0;
-    yaw_offset = 0;
-    roll_offset = 0;
-    pitch_offset = 0;
+    if(placeFlag === 'eachRealControlMenu') {
+        if (pitch_offset > 0) {
+            pitch_offset -= 10;
+            if (pitch_offset < 0) {
+                pitch_offset = 0;
+            }
+        } else if (pitch_offset < 0) {
+            pitch_offset += 10;
+            if (pitch_offset > 0) {
+                pitch_offset = 0;
+            }
+        }
+
+        if (roll_offset > 0) {
+            roll_offset -= 10;
+            if (roll_offset < 0) {
+                roll_offset = 0;
+            }
+        } else if (roll_offset < 0) {
+            roll_offset += 10;
+            if (roll_offset > 0) {
+                roll_offset = 0;
+            }
+        }
+
+        term.moveTo.cyan(1, 7, 'pitch:        ');
+        term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
+        term.moveTo.cyan(1, 8, 'roll:        ');
+        term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+
+        if (roll_offset == 0 && pitch_offset == 0) {
+        } else {
+            setTimeout(key_release, 100);
+        }
+
+        // throttle_offset = 0;
+        // yaw_offset = 0;
+        // roll_offset = 0;
+        // pitch_offset = 0;
+    }
 }
 
 var ori_dist = 0;
@@ -1753,16 +1791,21 @@ function actionRealControl() {
             send_joystick_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected]);
         }
         else {
-            term.red("The rc parsms value is not set.\n");
+            term.moveTo.red(1, 9, "The rc parsms value is not set.\n");
         }
         setTimeout(actionRealControl, 100);
     }
 }
 
 function eachRealControlMenu() {
+    placeFlag = 'eachRealControlMenu';
+
     term.eraseDisplayBelow();
 
-    term.yellow("w: throttle up\ns: throttle down\na: yaw left\nd: yaw right\nup: pitch up\ndown: pitch down\nleft: roll left\nright: roll right\n");
+    //term.yellow("w: throttle up\ns: throttle down\na: yaw left\nd: yaw right\nup: pitch up\ndown: pitch down\nleft: roll left\nright: roll right\n");
+    term.yellow("w: pitch forward\ns: pitch backward\na: roll left\nd: roll right\n");
+    term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
+    term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
 
     setTimeout(actionRealControl, 50);
 }
@@ -2508,8 +2551,8 @@ function send_joystick_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.blue('Send joystick command to %s\n', target_name);
-            term.red('msg: ' +  msg.toString('hex') + '\n');
+            term.moveTo.blue(1, 9, 'Send joystick command to %s\n', target_name);
+            term.moveTo.red(1, 10, 'msg: ' +  msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
     }
