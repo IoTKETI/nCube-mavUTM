@@ -55,7 +55,7 @@ catch (e) {
     info.gcs = conf.gcs;
     info.gcs_sys_id = 255;
     info.goto_position = [
-        'cancel' , '37.2597483:126.6766316:6:2' , '37.2597611:126.6759114:6:2'
+        'cancel', '37.2597483:126.6766316:6:2', '37.2597611:126.6759114:6:2'
     ];
     info.system_id = 1;
     conf.drone.push(info);
@@ -69,7 +69,7 @@ conf.running_type = 'local';        // 'local' or 'global' : When this is worked
 conf.use_terminal = 'enable'; //'enable';
 
 
-if(conf.use_terminal === 'enable') {
+if (conf.use_terminal === 'enable') {
     require('./terminal_app');
 }
 else {
