@@ -230,7 +230,7 @@ function allMenu() {
             allLandMenu();
         }
         else if (response.selectedText === 'Auto_GoTo') {
-            allAutoAllGotoMenu();
+            allAutoGotoMenu();
         }
         else if (response.selectedText === 'Start_Mission') {
             allStartMissionMenu();
@@ -413,7 +413,7 @@ function allTakeoffMenu() {
 
                         setTimeout(send_arm_command, back_menu_delay * 20 + back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], 1, 0);
 
-                        setTimeout(send_takeoff_command, back_menu_delay * 140 + back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], alt);
+                        setTimeout(send_takeoff_command, back_menu_delay * 70 + back_menu_delay * command_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], alt);
                     }
                 }
                 setTimeout(allMenu, back_menu_delay * 160 + back_menu_delay * (conf.drone.length + 1));
@@ -602,7 +602,10 @@ map.set('w', 'pitch_forward');
 map.set('a', 'roll_left');
 map.set('s', 'pitch_backward');
 map.set('d', 'roll_right');
-const MAX_OFFSET = 128;
+map.set('9', 'alt_hold');
+map.set('7', 'loiter');
+
+const MAX_OFFSET = 64;
 const gap = 2;
 
 term.grabInput();
@@ -621,7 +624,21 @@ term.on('key', function (name, matches, data) {
         if (map.has(name)) {
             const command = map.get(name);
 
-            if (command === 'throttle_high') {
+            if(command === 'loiter') {
+                // set GUIDED Mode
+                var custom_mode = 5;
+                var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+            }
+            else if(command === 'alt_hold') {
+                // set GUIDED Mode
+                custom_mode = 2;
+                base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+            }
+            else if (command === 'throttle_high') {
                 throttle_offset += gap;
                 if (throttle_offset >= MAX_OFFSET) {
                     throttle_offset = MAX_OFFSET;
@@ -650,40 +667,40 @@ term.on('key', function (name, matches, data) {
                 console.log(command + ': ' + yaw_offset);
             }
             else if (command === 'pitch_forward') {
-                pitch_offset += gap;
-                if (pitch_offset >= MAX_OFFSET) {
-                    pitch_offset = MAX_OFFSET;
-                }
-                term.moveTo.cyan(1, 7, 'pitch:        ');
-                term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
-            }
-            else if (command === 'pitch_backward') {
                 pitch_offset -= gap;
                 if (pitch_offset <= -MAX_OFFSET) {
                     pitch_offset = -MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 7, 'pitch:        ');
-                term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
+                term.moveTo.cyan(1, 9, 'pitch:        ');
+                term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
+            }
+            else if (command === 'pitch_backward') {
+                pitch_offset += gap;
+                if (pitch_offset >= MAX_OFFSET) {
+                    pitch_offset = MAX_OFFSET;
+                }
+                term.moveTo.cyan(1, 9, 'pitch:        ');
+                term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
             }
             else if (command === 'roll_left') {
                 roll_offset -= gap;
                 if (roll_offset <= -MAX_OFFSET) {
                     roll_offset = -MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 8, 'roll:        ');
-                term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+                term.moveTo.cyan(1, 10, 'roll:        ');
+                term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
             }
             else if (command === 'roll_right') {
                 roll_offset += gap;
                 if (roll_offset >= MAX_OFFSET) {
                     roll_offset = MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 8, 'roll:        ');
-                term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+                term.moveTo.cyan(1, 10, 'roll:        ');
+                term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
             }
 
             clearTimeout(keytimeout);
-            keytimeout = setTimeout(key_release, 750);
+            keytimeout = setTimeout(key_release, 500);
         }
         else {
             // console.log(`${name} is not defined as a key mapping.`);
@@ -721,10 +738,10 @@ function key_release() {
             }
         }
 
-        term.moveTo.cyan(1, 7, 'pitch:        ');
-        term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
-        term.moveTo.cyan(1, 8, 'roll:        ');
-        term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+        term.moveTo.cyan(1, 9, 'pitch:        ');
+        term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
+        term.moveTo.cyan(1, 10, 'roll:        ');
+        term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
 
         if (roll_offset == 0 && pitch_offset == 0) {
         }
@@ -769,7 +786,7 @@ function calcAllDistance(goto_position) {
 var pre_progress = 0;
 var abnormal_count = 0;
 
-function doProgress(selectedIndex, input, callback) {
+function doAllProgress(selectedIndex, input, callback) {
     if (key === 'BACKSPACE') {
         key = '';
         progress = 1;
@@ -781,15 +798,15 @@ function doProgress(selectedIndex, input, callback) {
         cur_dist = calcAllDistance(input);
 
         progress = (ori_dist - cur_dist) / ori_dist;
-        if (progress > 0.95) {
+        if (progress > 0.96) {
             progress = 1;
         }
         progressBar.update(progress);
 
         if (progress >= 1) {
-            callback('200');
+            setTimeout(callback, 900, '200');
         }
-        else if (Math.abs(pre_progress - progress) < 0.01) {
+        else if (Math.abs(pre_progress - progress) < 0.0001) {
             pre_progress = progress;
             abnormal_count++;
             if (abnormal_count > 8) {
@@ -798,7 +815,7 @@ function doProgress(selectedIndex, input, callback) {
                 callback('500');
             }
             else {
-                setTimeout(doProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+                setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
                     callback(code);
                 });
             }
@@ -806,14 +823,14 @@ function doProgress(selectedIndex, input, callback) {
         else {
             pre_progress = progress;
             cur_dist = 0;
-            setTimeout(doProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+            setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
                 callback(code);
             });
         }
     }
 }
 
-function actionProgressBar(selectedIndex, input) {
+function actionAllProgressBar(selectedIndex, input) {
     progressBar = term.progressBar({
         width: 80,
         title: 'In flight:',
@@ -826,13 +843,13 @@ function actionProgressBar(selectedIndex, input) {
     abnormal_count = 0;
 
     progress = 0;
-    doProgress(selectedIndex, input, function (code) {
+    doAllProgress(selectedIndex, input, function (code) {
         if (code === '404') {
             term.red('\ncanceled\n');
             setTimeout(allMenu, back_menu_delay + back_menu_delay * (conf.drone.length + 1));
         }
         else if (code === '500') {
-            term.red('\ndrone is no response\n');
+            term.red('\nDrone is no response\n');
             setTimeout(allMenu, back_menu_delay + back_menu_delay * (conf.drone.length + 1));
         }
         else {
@@ -842,7 +859,7 @@ function actionProgressBar(selectedIndex, input) {
             else {
                 // todo: 목적지에 도달한 뒤 대기 시간 기다리는 것 추가할 것, 개별 드론별 대기시간 주는 건 어려울 듯
 
-                setTimeout(actionAutoAllGoto, back_menu_delay + back_menu_delay * (conf.drone.length + 1), selectedIndex);
+                setTimeout(actionAllAutoGoto, back_menu_delay + back_menu_delay * (conf.drone.length + 1), selectedIndex);
             }
         }
     });
@@ -852,28 +869,28 @@ function actionProgressBar(selectedIndex, input) {
 var progress = 0;
 var progressBar = null;
 
-function actionAutoAllGoto(selectedIndex) {
-    curAllAutoGotoIndex = selectedIndex;
-    var input = goto_all_position[selectedIndex];
+function actionAllAutoGoto(selectedGotoIndex) {
+    curAllAutoGotoIndex = selectedGotoIndex;
+    var input = goto_all_position[selectedGotoIndex];
     if (input.split('|')[0] === 'cancel') {
-        actionAutoAllGoto(++selectedIndex);
+        actionAllAutoGoto(++selectedGotoIndex);
     }
     else {
-        term('\n').eraseLineAfter.green("%d : %s\n", selectedIndex, input);
+        term('\n').eraseLineAfter.green("%d : %s\n", selectedGotoIndex, input);
 
         actionAllGoto(input);
 
-        setTimeout(actionProgressBar, back_menu_delay + back_menu_delay * (conf.drone.length + 1), selectedIndex, input);
+        setTimeout(actionAllProgressBar, back_menu_delay + back_menu_delay * (conf.drone.length + 1), selectedGotoIndex, input);
     }
 }
 
 var curAllAutoGotoIndex = 0;
 
-function allAutoAllGotoMenu() {
+function allAutoGotoMenu() {
     term.eraseDisplayBelow();
     term('Send GoTo command automatically');
 
-    actionAutoAllGoto(0);
+    actionAllAutoGoto(0);
 }
 
 function allStartMissionMenu() {
@@ -1279,6 +1296,9 @@ function eachMenu() {
         else if (response.selectedText === 'Land') {
             eachLandMenu();
         }
+        else if (response.selectedText === 'Auto_GoTo') {
+            eachAutoGotoMenu();
+        }
         else if (response.selectedText === 'Start_Mission') {
             eachStartMissionMenu();
         }
@@ -1369,7 +1389,7 @@ function eachTakeoffMenu() {
 
                 setTimeout(send_arm_command, back_menu_delay * 20, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], 1, 0);
 
-                setTimeout(send_takeoff_command, back_menu_delay * 140, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], alt);
+                setTimeout(send_takeoff_command, back_menu_delay * 70, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], alt);
 
                 setTimeout(eachMenu, back_menu_delay * 150 + back_menu_delay);
             }
@@ -1552,6 +1572,152 @@ function eachLandMenu() {
 
     setTimeout(eachMenu, back_menu_delay);
 }
+
+
+var pre_progress = 0;
+var abnormal_count = 0;
+
+
+function calcEachDistance(cur_goto_position) {
+    var dist = 0;
+    var cur_lat = gpi[target_system_id[cur_drone_selected]].lat / 10000000;
+    var cur_lon = gpi[target_system_id[cur_drone_selected]].lon / 10000000;
+    var cur_alt = gpi[target_system_id[cur_drone_selected]].relative_alt / 1000;
+
+    var arr_cur_goto_position = cur_goto_position.split(':');
+    var tar_lat = parseFloat(arr_cur_goto_position[0]);
+    var tar_lon = parseFloat(arr_cur_goto_position[1]);
+    var tar_alt = parseFloat(arr_cur_goto_position[2]);
+
+    dist += Math.sqrt(Math.pow((tar_lat - cur_lat), 2) + Math.pow((tar_lon - cur_lon), 2) + Math.pow((tar_alt - cur_alt), 2));
+
+    return dist;
+}
+
+function doEachProgress(selectedIndex, input, callback) {
+    if (key === 'BACKSPACE') {
+        key = '';
+        progress = 1;
+        progressBar.update(progress);
+
+        callback('404');
+    }
+    else {
+        cur_dist = calcEachDistance(input);
+
+        progress = (ori_dist - cur_dist) / ori_dist;
+        if (progress > 0.96) {
+            progress = 1;
+        }
+        progressBar.update(progress);
+
+        if (progress >= 1) {
+            setTimeout(callback, 900, '200');
+        }
+        else if (Math.abs(pre_progress - progress) < 0.0001) {
+            pre_progress = progress;
+            abnormal_count++;
+            if (abnormal_count > 8) {
+                progress = 1;
+                progressBar.update(progress);
+                callback('500');
+            }
+            else {
+                setTimeout(doEachProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+                    callback(code);
+                });
+            }
+        }
+        else {
+            pre_progress = progress;
+            cur_dist = 0;
+            setTimeout(doEachProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+                callback(code);
+            });
+        }
+    }
+}
+
+function actionEachProgressBar(selectedGotoIndex, input) {
+    progressBar = term.progressBar({
+        width: 80,
+        title: 'In flight:',
+        eta: true,
+        percent: true
+    });
+
+    ori_dist = calcEachDistance(input);
+    cur_dist = 0;
+    abnormal_count = 0;
+
+    progress = 0;
+    doEachProgress(selectedGotoIndex, input, function (code) {
+        if (code === '404') {
+            term.red('\ncanceled\n');
+            setTimeout(eachMenu, back_menu_delay + back_menu_delay);
+        }
+        else if (code === '500') {
+            term.red('\nDrone is no response\n');
+            setTimeout(eachMenu, back_menu_delay + back_menu_delay);
+        }
+        else {
+            if (++selectedGotoIndex >= goto_all_position.length) {
+                setTimeout(eachMenu, back_menu_delay + back_menu_delay);
+            }
+            else {
+                // todo: 목적지에 도달한 뒤 대기 시간 기다리는 것 추가할 것, 개별 드론별 대기시간 주는 건 어려울 듯
+
+                setTimeout(actionEachAutoGoto, back_menu_delay + back_menu_delay, selectedGotoIndex);
+            }
+        }
+    });
+}
+
+function actionEachGoto(input) {
+    cur_goto_position = input;
+
+    // set GUIDED Mode
+    var custom_mode = 4;
+    var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+    base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+    send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
+
+    var arr_cur_goto_position = cur_goto_position.split(':');
+    var lat = parseFloat(arr_cur_goto_position[0]);
+    var lon = parseFloat(arr_cur_goto_position[1]);
+    var alt = parseFloat(arr_cur_goto_position[2]);
+    var speed = parseFloat(arr_cur_goto_position[3]);
+
+    setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
+
+    setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+}
+
+function actionEachAutoGoto(selectedGotoIndex) {
+    curEachAutoGotoIndex = selectedGotoIndex;
+
+    var input = goto_position[cur_drone_selected][selectedGotoIndex];
+    if (input.split('|')[0] === 'cancel') {
+        actionEachAutoGoto(++selectedGotoIndex);
+    }
+    else {
+        term('\n').eraseLineAfter.green("%d : %s\n", selectedGotoIndex, input);
+
+        actionEachGoto(input);
+
+        setTimeout(actionEachProgressBar, back_menu_delay + back_menu_delay * (conf.drone.length + 1), selectedGotoIndex, input);
+    }
+}
+
+var curEachAutoGotoIndex = 0;
+
+function eachAutoGotoMenu() {
+    term.eraseDisplayBelow();
+    term('Send GoTo command automatically');
+
+    actionEachAutoGoto(0);
+}
+
 
 function eachStartMissionMenu() {
     term.eraseDisplayBelow();
@@ -1818,7 +1984,7 @@ function actionRealControl() {
             send_joystick_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected]);
         }
         else {
-            term.moveTo.red(1, 9, "The rc parsms value is not set.\n");
+            term.moveTo.red(1, 11, "The rc parsms value is not set.\n");
         }
         setTimeout(actionRealControl, 100);
     }
@@ -1830,9 +1996,9 @@ function eachRealControlMenu() {
     term.eraseDisplayBelow();
 
     //term.yellow("w: throttle up\ns: throttle down\na: yaw left\nd: yaw right\nup: pitch up\ndown: pitch down\nleft: roll left\nright: roll right\n");
-    term.yellow("w: pitch forward\ns: pitch backward\na: roll left\nd: roll right\n");
-    term.moveTo.cyan(1, 7, 'pitch: ' + pitch_offset);
-    term.moveTo.cyan(1, 8, 'roll: ' + roll_offset);
+    term.yellow("w: pitch forward\ns: pitch backward\na: roll left\nd: roll right\n7: loiter\n9: loiter");
+    term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
+    term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
 
     setTimeout(actionRealControl, 50);
 }
