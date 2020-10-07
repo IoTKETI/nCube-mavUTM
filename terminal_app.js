@@ -1423,25 +1423,10 @@ function eachGotoMenu() {
             setTimeout(eachMenu, back_menu_delay);
         }
         else {
-            cur_goto_position = input;
             history.push(input);
             history.shift();
 
-            // set GUIDED Mode
-            var custom_mode = 4;
-            var base_mode = hb[target_system_id[cur_drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
-            base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-            send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
-
-            var arr_cur_goto_position = cur_goto_position.split(':');
-            var lat = parseFloat(arr_cur_goto_position[0]);
-            var lon = parseFloat(arr_cur_goto_position[1]);
-            var alt = parseFloat(arr_cur_goto_position[2]);
-            var speed = parseFloat(arr_cur_goto_position[3]);
-
-            setTimeout(send_goto_command, back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], lat, lon, alt);
-
-            setTimeout(send_change_speed_command, back_menu_delay + back_menu_delay, cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], speed);
+            actionEachGoto(input);
 
             setTimeout(eachMenu, back_menu_delay + back_menu_delay + back_menu_delay);
         }
@@ -1572,11 +1557,6 @@ function eachLandMenu() {
 
     setTimeout(eachMenu, back_menu_delay);
 }
-
-
-var pre_progress = 0;
-var abnormal_count = 0;
-
 
 function calcEachDistance(cur_goto_position) {
     var dist = 0;
