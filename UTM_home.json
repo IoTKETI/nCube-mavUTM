@@ -1,0 +1,42 @@
+[
+    {
+        "name": "UMACAir11",
+        "gcs": "UTM_UVARC",
+        "gcs_sys_id": 255,
+        "goto_position": [
+            "cancel",
+            "34.6106958:127.2058165:30:5"
+        ],
+        "system_id": 11
+    },
+    {
+        "name": "UMACAir12",
+        "gcs": "UTM_UVARC",
+        "gcs_sys_id": 255,
+        "goto_position": [
+            "cancel",
+            "34.6107797:127.2058433:35:5"
+        ],
+        "system_id": 12
+    },
+    {
+        "name": "UMACAir13",
+        "gcs": "UTM_UVARC",
+        "gcs_sys_id": 255,
+        "goto_position": [
+            "cancel",
+            "34.6108481:127.2058701:40:5"
+        ],
+        "system_id": 13
+    },
+    {
+        "name": "UMACAir14",
+        "gcs": "UTM_UVARC",
+        "gcs_sys_id": 255,
+        "goto_position": [
+            "cancel",
+            "34.6109298:127.2058916:45:5"
+        ],
+        "system_id": 14
+    }
+]
