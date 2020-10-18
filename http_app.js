@@ -68,6 +68,13 @@ function mqtt_connect(serverip) {
                     var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
                     mqtt_client.subscribe(noti_topic);
                     console.log('subscribe - ' + noti_topic);
+
+                    if (conf.commLink === 'udp') {
+                        createTcpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
+                    }
+                    else if (conf.commLink === 'tcp') {
+                        createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10));
+                    }
                 }
             }
         }
@@ -272,62 +279,112 @@ function retrieve_drone() {
 
 var gcs_content = {};
 
-var udpClient = null;
-var utm_socket = {};
+//var udpClient = null;
+//var utm_socket = {};
 
-if (conf.commLink == 'udp') {
-    if (udpClient == null) {
-        udpClient = udp.createSocket('udp4');
+var udpCommLink = {};
+var tcpCommLink = {};
+//
+// if (conf.commLink == 'udp') {
+//     if (udpClient == null) {
+//         udpClient = udp.createSocket('udp4');
+//
+//         udpClient.on('message', from_gcs);
+//     }
+// }
+// else if (conf.commLink == 'tcp') {
+//     var _server = net.createServer(function (socket) {
+//         socket.id = require('shortid').generate();
+//         console.log('socket connected [' + socket.id + ']');
+//
+//         utm_socket[socket.id] = socket;
+//
+//         socket.on('data', from_gcs);
+//
+//         socket.on('end', function () {
+//             console.log('end');
+//             if (utm_socket.hasOwnProperty(this.id)) {
+//                 delete utm_socket[this.id];
+//             }
+//         });
+//
+//         socket.on('close', function () {
+//             console.log('close');
+//             if (utm_socket.hasOwnProperty(this.id)) {
+//                 delete utm_socket[this.id];
+//             }
+//         });
+//
+//         socket.on('error', function (e) {
+//             console.log('error ', e);
+//             if (utm_socket.hasOwnProperty(this.id)) {
+//                 delete utm_socket[this.id];
+//             }
+//         });
+//     });
+//
+//     if (conf.running_type === 'local') {
+//         _server.listen(5760, function () {
+//             console.log('TCP Server for local GCS is listening on port 5760');
+//         });
+//     }
+//     else if (conf.running_type === 'global') {
+//         _server.listen(7598, function () {
+//             console.log('TCP Server for global GCS is listening on port 7598');
+//         });
+//     }
+//     else {
+//         console.log('[server.listen] conf.running_type is incorrect');
+//     }
+// }
 
-        udpClient.on('message', from_gcs);
-    }
+function createUdpCommLink(sysid, port) {
+    var udpSocket = udp.createSocket('udp4');
+
+    udpCommLink[sysid] = {};
+    udpCommLink[sysid].socket = udpSocket;
+    udpCommLink[sysid].port = port;
+
+    udpSocket.on('message', from_gcs);
 }
-else if (conf.commLink == 'tcp') {
-    var _server = net.createServer(function (socket) {
-        socket.id = require('shortid').generate();
-        console.log('socket connected [' + socket.id + ']');
 
-        utm_socket[socket.id] = socket;
+function createTcpCommLink(sysid, port) {
+    var _server = net.createServer(function (socket) {
+        console.log('socket connected [' + sysid + ']');
+
+        tcpCommLink[sysid] = {};
+        tcpCommLink[sysid].socket = socket;
+        tcpCommLink[sysid].port = port;
 
         socket.on('data', from_gcs);
 
         socket.on('end', function () {
             console.log('end');
-            if (utm_socket.hasOwnProperty(this.id)) {
-                delete utm_socket[this.id];
-            }
         });
 
         socket.on('close', function () {
             console.log('close');
-            if (utm_socket.hasOwnProperty(this.id)) {
-                delete utm_socket[this.id];
-            }
         });
 
         socket.on('error', function (e) {
             console.log('error ', e);
-            if (utm_socket.hasOwnProperty(this.id)) {
-                delete utm_socket[this.id];
-            }
         });
     });
 
     if (conf.running_type === 'local') {
-        _server.listen(5760, function () {
-            console.log('TCP Server for local GCS is listening on port 5760');
+        _server.listen(port, function () {
+            console.log('TCP Server for local GCS is listening on port ' + port);
         });
     }
     else if (conf.running_type === 'global') {
-        _server.listen(7598, function () {
-            console.log('TCP Server for global GCS is listening on port 7598');
+        _server.listen(port, function () {
+            console.log('TCP Server for global GCS is listening on port ' + port);
         });
     }
     else {
         console.log('[server.listen] conf.running_type is incorrect');
     }
 }
-
 
 function from_gcs(msg) {
     var content = new Buffer.from(msg, 'ascii').toString('hex');
@@ -400,62 +457,88 @@ global.rc4_max = {};
 global.rc4_min = {};
 global.rc4_trim = {};
 
+global.resetGpiTimer = {};
+
+function resetGpiValue(sys_id) {
+    gpi[sys_id].time_boot_ms = 0;
+    gpi[sys_id].lat = 0;
+    gpi[sys_id].lon = 0;
+    gpi[sys_id].alt = 0;
+    gpi[sys_id].relative_alt = 0;
+    gpi[sys_id].vx = 0;
+    gpi[sys_id].vy = 0;
+}
+
 function send_to_gcs(content_each) {
-    for (var idx in utm_socket) {
-        if (utm_socket.hasOwnProperty(idx)) {
-            utm_socket[idx].write(content_each);
-        }
+    // if (Object.keys(utm_socket).length > 0 || udpClient != null) {
+    var content_each_hex = content_each.toString('hex');
+    var ver = content_each_hex.substr(0, 2);
+    if (ver == 'fd') {
+        var sysid = content_each_hex.substr(10, 2).toLowerCase();
+        var msgid = content_each_hex.substr(14, 6).toLowerCase();
+    }
+    else {
+        sysid = content_each_hex.substr(6, 2).toLowerCase();
+        msgid = content_each_hex.substr(10, 2).toLowerCase();
     }
 
-    if (udpClient != null) {
-        udpClient.send(content_each, 14550, 'localhost', function (error) {
+    // for (var idx in utm_socket) {
+    //     if (utm_socket.hasOwnProperty(idx)) {
+    //         utm_socket[idx].write(content_each);
+    //     }
+    // }
+
+    if(conf.commLink === 'udp') {
+        udpCommLink[sysid].socket.send(content_each, udpCommLink[sysid].port, 'localhost', function (error) {
             if (error) {
-                udpClient.close();
-                console.log('udpClient socket is closed');
+                udpCommLink[sysid].socket.close();
+                console.log('udpCommLink[' + sysid + '].socket is closed');
             }
         });
     }
+    else if(conf.commLink === 'tcp') {
+        tcpCommLink[sysid].socket.write(content_each);
+    }
 
-    // if (Object.keys(utm_socket).length > 0 || udpClient != null) {
-    content_each = content_each.toString('hex');
-    var ver = content_each.substr(0, 2);
-    if (ver == 'fd') {
-        var sysid = content_each.substr(10, 2).toLowerCase();
-        var msgid = content_each.substr(14, 6).toLowerCase();
-    }
-    else {
-        sysid = content_each.substr(6, 2).toLowerCase();
-        msgid = content_each.substr(10, 2).toLowerCase();
-    }
+
+    // if (udpClient != null) {
+    //     udpClient.send(content_each, 14550, 'localhost', function (error) {
+    //         if (error) {
+    //             udpClient.close();
+    //             console.log('udpClient socket is closed');
+    //         }
+    //     });
+    // }
+
 
     if (msgid == '00') { // #00 : HEARTBEAT
         if (ver == 'fd') {
             var base_offset = 20;
-            var custom_mode = content_each.substr(base_offset, 8).toLowerCase();
+            var custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var type = content_each.substr(base_offset, 2).toLowerCase();
+            var type = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var autopilot = content_each.substr(base_offset, 2).toLowerCase();
+            var autopilot = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var base_mode = content_each.substr(base_offset, 2).toLowerCase();
+            var base_mode = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var system_status = content_each.substr(base_offset, 2).toLowerCase();
+            var system_status = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var mavlink_version = content_each.substr(base_offset, 2).toLowerCase();
+            var mavlink_version = content_each_hex.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            custom_mode = content_each.substr(base_offset, 8).toLowerCase();
+            custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            type = content_each.substr(base_offset, 2).toLowerCase();
+            type = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            autopilot = content_each.substr(base_offset, 2).toLowerCase();
+            autopilot = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            base_mode = content_each.substr(base_offset, 2).toLowerCase();
+            base_mode = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            system_status = content_each.substr(base_offset, 2).toLowerCase();
+            system_status = content_each_hex.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mavlink_version = content_each.substr(base_offset, 2).toLowerCase();
+            mavlink_version = content_each_hex.substr(base_offset, 2).toLowerCase();
         }
 
         //console.log(content_each);
@@ -483,35 +566,35 @@ function send_to_gcs(content_each) {
     else if (msgid == '21') { // #33 - global_position_int
         if (ver == 'fd') {
             base_offset = 20;
-            var time_boot_ms = content_each.substr(base_offset, 8).toLowerCase();
+            var time_boot_ms = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var lat = content_each.substr(base_offset, 8).toLowerCase();
+            var lat = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var lon = content_each.substr(base_offset, 8).toLowerCase();
+            var lon = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var alt = content_each.substr(base_offset, 8).toLowerCase();
+            var alt = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+            var relative_alt = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var vx = content_each.substr(base_offset, 4).toLowerCase();
+            var vx = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var vy = content_each.substr(base_offset, 4).toLowerCase();
+            var vy = content_each_hex.substr(base_offset, 4).toLowerCase();
         }
         else {
             base_offset = 12;
-            time_boot_ms = content_each.substr(base_offset, 8).toLowerCase();
+            time_boot_ms = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            lat = content_each.substr(base_offset, 8).toLowerCase();
+            lat = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            lon = content_each.substr(base_offset, 8).toLowerCase();
+            lon = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            alt = content_each.substr(base_offset, 8).toLowerCase();
+            alt = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            relative_alt = content_each.substr(base_offset, 8).toLowerCase();
+            relative_alt = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            vx = content_each.substr(base_offset, 4).toLowerCase();
+            vx = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            vy = content_each.substr(base_offset, 4).toLowerCase();
+            vy = content_each_hex.substr(base_offset, 4).toLowerCase();
         }
 
         sys_id = parseInt(sysid, 16).toString();
@@ -526,32 +609,40 @@ function send_to_gcs(content_each) {
         gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
         gpi[sys_id].vx = Buffer.from(vx, 'hex').readInt16LE(0);
         gpi[sys_id].vy = Buffer.from(vy, 'hex').readInt16LE(0);
+
+        if(resetGpiTimer.hasOwnProperty(sys_id)) {
+            clearTimeout(resetGpiTimer[sys_id]);
+            resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
+        }
+        else {
+            resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
+        }
     }
 
     else if (msgid == '16') { // #22 PARAM_VALUE
         if (ver == 'fd') {
             base_offset = 20;
-            var param_value = content_each.substr(base_offset, 8).toLowerCase();
+            var param_value = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var param_count = content_each.substr(base_offset, 4).toLowerCase();
+            var param_count = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var param_index = content_each.substr(base_offset, 4).toLowerCase();
+            var param_index = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var param_id = content_each.substr(base_offset, 32).toLowerCase();
+            var param_id = content_each_hex.substr(base_offset, 32).toLowerCase();
             base_offset += 32;
-            var param_type = content_each.substr(base_offset, 2).toLowerCase();
+            var param_type = content_each_hex.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            param_value = content_each.substr(base_offset, 8).toLowerCase();
+            param_value = content_each_hex.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            param_count = content_each.substr(base_offset, 4).toLowerCase();
+            param_count = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            param_index = content_each.substr(base_offset, 4).toLowerCase();
+            param_index = content_each_hex.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            param_id = content_each.substr(base_offset, 32).toLowerCase();
+            param_id = content_each_hex.substr(base_offset, 32).toLowerCase();
             base_offset += 32;
-            param_type = content_each.substr(base_offset, 2).toLowerCase();
+            param_type = content_each_hex.substr(base_offset, 2).toLowerCase();
         }
 
         sys_id = parseInt(sysid, 16).toString();
