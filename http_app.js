@@ -341,6 +341,8 @@ var tcpCommLink = {};
 function createUdpCommLink(sys_id, port) {
     var udpSocket = udp.createSocket('udp4');
 
+    udpSocket.id = sys_id;
+
     udpCommLink[sys_id] = {};
     udpCommLink[sys_id].socket = udpSocket;
     udpCommLink[sys_id].port = port;
@@ -351,6 +353,8 @@ function createUdpCommLink(sys_id, port) {
 function createTcpCommLink(sys_id, port) {
     var _server = net.createServer(function (socket) {
         console.log('socket connected [' + sys_id + ']');
+
+        socket.id = sys_id;
 
         tcpCommLink[sys_id] = {};
         tcpCommLink[sys_id].socket = socket;
@@ -402,18 +406,25 @@ function from_gcs(msg) {
         gcs_content[sysid + '-' + msgid + '-' + ver] = content;
     }
 
-    for (var idx in conf.drone) {
-        if (conf.drone.hasOwnProperty(idx)) {
-            if (parseInt(sysid, 16) == conf.drone[idx].gcs_sys_id) {
-                var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
-                mqtt_client.publish(parent, msg);
-            }
-        }
+    var sys_id = parseInt(sysid, 16);
+
+    if(sys_id == this.id) {
+        // for (var idx in conf.drone) {
+        //     if (conf.drone.hasOwnProperty(idx)) {
+                if (parseInt(sysid, 16) == conf.drone[idx].gcs_sys_id) {
+                    var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+                    mqtt_client.publish(parent, msg);
+                }
+        //     }
+        // }
+    }
+    else {
+        console.log(sys_id);
     }
 
-    if (msgid == '4c') {
-        console.log('<-- 4c MAVLINK_MSG_ID_COMMAND_LONG - ' + content);
-    }
+    // if (msgid == '4c') {
+    //     console.log('<-- 4c MAVLINK_MSG_ID_COMMAND_LONG - ' + content);
+    // }
 
     // else if(msgid == '2c') {
     //     console.log('<-- 2c MISSION_COUNT - ' + content);
