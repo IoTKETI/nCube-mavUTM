@@ -364,14 +364,26 @@ function createTcpCommLink(sys_id, port) {
 
         socket.on('end', function () {
             console.log('end');
+
+            if(tcpCommLink.hasOwnProperty(this.id)) {
+                delete tcpCommLink[this.id];
+            }
         });
 
         socket.on('close', function () {
             console.log('close');
+
+            if(tcpCommLink.hasOwnProperty(this.id)) {
+                delete tcpCommLink[this.id];
+            }
         });
 
         socket.on('error', function (e) {
             console.log('error ', e);
+
+            if(tcpCommLink.hasOwnProperty(this.id)) {
+                delete tcpCommLink[this.id];
+            }
         });
     });
 
@@ -408,19 +420,57 @@ function from_gcs(msg) {
 
     var sys_id = parseInt(sysid, 16);
 
-    if(sys_id == this.id) {
-        // for (var idx in conf.drone) {
-        //     if (conf.drone.hasOwnProperty(idx)) {
-                if (parseInt(sysid, 16) == conf.drone[idx].gcs_sys_id) {
+    if(sys_id == 255) {
+        console.log(this.id);
+
+        for (var idx in conf.drone) {
+            if (conf.drone.hasOwnProperty(idx)) {
+                if (this.id == conf.drone[idx].system_id) {
                     var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
                     mqtt_client.publish(parent, msg);
                 }
-        //     }
-        // }
+            }
+        }
+    }
+    else if(sys_id == this.id) {
+        for (var idx in conf.drone) {
+            if (conf.drone.hasOwnProperty(idx)) {
+                if (sys_id == conf.drone[idx].system_id) {
+                    var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+                    mqtt_client.publish(parent, msg);
+                    console.log(parent);
+                }
+            }
+        }
     }
     else {
+        console.log(this.id);
         console.log(sys_id);
     }
+
+    // for (var idx in conf.drone) {
+    //     if (conf.drone.hasOwnProperty(idx)) {
+    //         if (sys_id == conf.drone[idx].gcs_sys_id) {
+    //             var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+    //             mqtt_client.publish(parent, msg);
+    //         }
+    //     }
+    // }
+    //
+    // if(sys_id == this.id) {
+    //     // for (var idx in conf.drone) {
+    //     //     if (conf.drone.hasOwnProperty(idx)) {
+    //             if (parseInt(sysid, 16) == conf.drone[idx].gcs_sys_id) {
+    //                 var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+    //                 mqtt_client.publish(parent, msg);
+    //             }
+    //     //     }
+    //     // }
+    // }
+    // else {
+    //     console.log(this.id);
+    //     console.log(sys_id);
+    // }
 
     // if (msgid == '4c') {
     //     console.log('<-- 4c MAVLINK_MSG_ID_COMMAND_LONG - ' + content);

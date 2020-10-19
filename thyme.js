@@ -33,7 +33,7 @@ conf.cse.host = '203.253.128.161'; //'150.197.3.100'; //'203.253.128.161';
 conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
-conf.commLink = 'tcp'; //'udp'; //'tcp';
+conf.commLink = 'udp'; //'udp'; //'tcp';
 
 // AE core
 conf.aei = "SgMavUTM"
