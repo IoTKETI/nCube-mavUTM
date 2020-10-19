@@ -2902,7 +2902,7 @@ function send_land_command(target_name, pub_topic, target_sys_id) {
     btn_params.param2 = 0; // Land Mode
     btn_params.param3 = 0; // Empty
     btn_params.param4 = 0; // Yaw angle
-    btn_params.param5 = 0; // Latitude
+    btn_params.param5 = 0; // Target latitude. If zero, the Copter will land at the current latitude.
     btn_params.param6 = 0; // Longitude
     btn_params.param7 = 0; // Altitude
 
@@ -2913,6 +2913,36 @@ function send_land_command(target_name, pub_topic, target_sys_id) {
         }
         else {
             term.blue('Send GoTo command to %s\n', target_name);
+            term.red('msg: ' + msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
+function send_rtl_command(target_name, pub_topic, target_sys_id) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.command = mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH;
+    btn_params.confirmation = 0;
+    btn_params.param1 = 0; //
+    btn_params.param2 = 0; //
+    btn_params.param3 = 0; //
+    btn_params.param4 = 0; //
+    btn_params.param5 = 0; //
+    btn_params.param6 = 0; //
+    btn_params.param7 = 0; //
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.blue('Send RTL command to %s\n', target_name);
             term.red('msg: ' + msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
@@ -3164,6 +3194,9 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
 // FOLL_YAW_BEHAVE : controls whether follow points in the same direction as lead vehicle or always towards it
 // FOLL_POS_P : gain which controls how aggressively this vehicle moves towards lead vehicle (limited by WPNAV_SPEED)
 // FOLL_ALT_TYPE : allows selecting whether to use lead vehicle’s relative-to-home or relative-to-sea-level altitude
+
+// todo: MAV_CMD_DO_SET_ROI
+// Sets the region of interest (ROI) for a sensor set or the vehicle itself. This can then be used by the vehicles control system to control the vehicle attitude and the attitude of various sensors such as cameras.
 
 var placeFlag = '';
 setInterval(function () {

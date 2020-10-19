@@ -339,66 +339,70 @@ var tcpCommLink = {};
 // }
 
 function createUdpCommLink(sys_id, port) {
-    var udpSocket = udp.createSocket('udp4');
+    if(!tcpCommLink.hasOwnProperty(sys_id)) {
+        var udpSocket = udp.createSocket('udp4');
 
-    udpSocket.id = sys_id;
+        udpSocket.id = sys_id;
 
-    udpCommLink[sys_id] = {};
-    udpCommLink[sys_id].socket = udpSocket;
-    udpCommLink[sys_id].port = port;
+        udpCommLink[sys_id] = {};
+        udpCommLink[sys_id].socket = udpSocket;
+        udpCommLink[sys_id].port = port;
 
-    udpSocket.on('message', from_gcs);
+        udpSocket.on('message', from_gcs);
+    }
 }
 
 function createTcpCommLink(sys_id, port) {
-    var _server = net.createServer(function (socket) {
-        console.log('socket connected [' + sys_id + ']');
+    if(!tcpCommLink.hasOwnProperty(sys_id)) {
+        var _server = net.createServer(function (socket) {
+            console.log('socket connected [' + sys_id + ']');
 
-        socket.id = sys_id;
+            socket.id = sys_id;
 
-        tcpCommLink[sys_id] = {};
-        tcpCommLink[sys_id].socket = socket;
-        tcpCommLink[sys_id].port = port;
+            tcpCommLink[sys_id] = {};
+            tcpCommLink[sys_id].socket = socket;
+            tcpCommLink[sys_id].port = port;
 
-        socket.on('data', from_gcs);
+            socket.on('data', from_gcs);
 
-        socket.on('end', function () {
-            console.log('end');
+            socket.on('end', function () {
+                console.log('end');
 
-            if(tcpCommLink.hasOwnProperty(this.id)) {
-                delete tcpCommLink[this.id];
-            }
+                if (tcpCommLink.hasOwnProperty(this.id)) {
+                    delete tcpCommLink[this.id];
+                }
+            });
+
+            socket.on('close', function () {
+                console.log('close');
+
+                if (tcpCommLink.hasOwnProperty(this.id)) {
+                    delete tcpCommLink[this.id];
+                }
+            });
+
+            socket.on('error', function (e) {
+                console.log('error ', e);
+
+                if (tcpCommLink.hasOwnProperty(this.id)) {
+                    delete tcpCommLink[this.id];
+                }
+            });
         });
 
-        socket.on('close', function () {
-            console.log('close');
-
-            if(tcpCommLink.hasOwnProperty(this.id)) {
-                delete tcpCommLink[this.id];
-            }
-        });
-
-        socket.on('error', function (e) {
-            console.log('error ', e);
-
-            if(tcpCommLink.hasOwnProperty(this.id)) {
-                delete tcpCommLink[this.id];
-            }
-        });
-    });
-
-    if (conf.running_type === 'local') {
-        _server.listen(port, function () {
-            console.log('TCP Server for local GCS is listening on port ' + port);
-        });
-    }
-    else if (conf.running_type === 'global') {
-        _server.listen(port, function () {
-            console.log('TCP Server for global GCS is listening on port ' + port);
-        });
-    }
-    else {
-        console.log('[server.listen] conf.running_type is incorrect');
+        if (conf.running_type === 'local') {
+            _server.listen(port, function () {
+                console.log('TCP Server for local GCS is listening on port ' + port);
+            });
+        }
+        else if (conf.running_type === 'global') {
+            _server.listen(port, function () {
+                console.log('TCP Server for global GCS is listening on port ' + port);
+            });
+        }
+        else {
+            console.log('[server.listen] conf.running_type is incorrect');
+        }
     }
 }
 
@@ -420,9 +424,7 @@ function from_gcs(msg) {
 
     var sys_id = parseInt(sysid, 16);
 
-    if(sys_id == 255) {
-        console.log(this.id);
-
+    if(sys_id == conf.gcs_sys_id) {
         for (var idx in conf.drone) {
             if (conf.drone.hasOwnProperty(idx)) {
                 if (this.id == conf.drone[idx].system_id) {
@@ -432,73 +434,6 @@ function from_gcs(msg) {
             }
         }
     }
-    else if(sys_id == this.id) {
-        for (var idx in conf.drone) {
-            if (conf.drone.hasOwnProperty(idx)) {
-                if (sys_id == conf.drone[idx].system_id) {
-                    var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
-                    mqtt_client.publish(parent, msg);
-                    console.log(parent);
-                }
-            }
-        }
-    }
-    else {
-        console.log(this.id);
-        console.log(sys_id);
-    }
-
-    // for (var idx in conf.drone) {
-    //     if (conf.drone.hasOwnProperty(idx)) {
-    //         if (sys_id == conf.drone[idx].gcs_sys_id) {
-    //             var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
-    //             mqtt_client.publish(parent, msg);
-    //         }
-    //     }
-    // }
-    //
-    // if(sys_id == this.id) {
-    //     // for (var idx in conf.drone) {
-    //     //     if (conf.drone.hasOwnProperty(idx)) {
-    //             if (parseInt(sysid, 16) == conf.drone[idx].gcs_sys_id) {
-    //                 var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
-    //                 mqtt_client.publish(parent, msg);
-    //             }
-    //     //     }
-    //     // }
-    // }
-    // else {
-    //     console.log(this.id);
-    //     console.log(sys_id);
-    // }
-
-    // if (msgid == '4c') {
-    //     console.log('<-- 4c MAVLINK_MSG_ID_COMMAND_LONG - ' + content);
-    // }
-
-    // else if(msgid == '2c') {
-    //     console.log('<-- 2c MISSION_COUNT - ' + content);
-    // }
-    //
-    // else if(msgid == '28') {
-    //     console.log('<-- 28 MISSION_REQ - ' + content);
-    // }
-    //
-    // else if(msgid == '2f') {
-    //     console.log('<-- 2f MISSION_ACK - ' + content);
-    // }
-    //
-    // else if(msgid == '33') {
-    //     console.log('<-- 33 MISSION_REQ_INT - ' + content);
-    // }
-    //
-    // else if(msgid == '49') {
-    //     console.log('<-- 49 MISSION_ITEM_INT - ' + content);
-    // }
-    //
-    // else if(msgid == '27') {
-    //     console.log('<-- 27 MISSION_ITEM - ' + content);
-    // }
 }
 
 global.hb = {};

@@ -2,7 +2,6 @@
     {
         "name": "UMACAir11",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2728530:127.3664190:35:4",
@@ -20,7 +19,6 @@
     {
         "name": "UMACAir12",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2730120:127.3670990:35:4",
@@ -38,7 +36,6 @@
     {
         "name": "UMACAir13",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2729500:127.3663770:35:4",
@@ -56,7 +53,6 @@
     {
         "name": "UMACAir14",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2731110:127.3670540:35:4",

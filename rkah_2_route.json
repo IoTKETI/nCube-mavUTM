@@ -2,7 +2,6 @@
     {
         "name": "UMACAir11",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "36.3160030:127.2350506:20:5",
@@ -15,7 +14,6 @@
     {
         "name": "UMACAir12",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "36.3155621:127.2343747:20:5",
@@ -28,7 +26,6 @@
     {
         "name": "UMACAir13",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "36.3155232:127.2339509:20:5",

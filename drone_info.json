@@ -2,7 +2,6 @@
     {
         "name": "KETI_Air_01",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2724709:127.3633033:35:3",
@@ -17,7 +16,6 @@
     {
         "name": "KETI_Air_02",
         "gcs": "UTM_UVARC",
-        "gcs_sys_id": 255,
         "goto_position": [
             "cancel",
             "37.2724709:127.3633033:35:3",

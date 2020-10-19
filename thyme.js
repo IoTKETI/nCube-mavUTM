@@ -34,6 +34,7 @@ conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
 conf.commLink = 'udp'; //'udp'; //'tcp';
+conf.gcs_sys_id = 255;
 
 // AE core
 conf.aei = "SgMavUTM"
@@ -53,7 +54,6 @@ catch (e) {
     info = {};
     info.name = 'KETI_Air_01';
     info.gcs = conf.gcs;
-    info.gcs_sys_id = 255;
     info.goto_position = [
         'cancel', '37.2597483:126.6766316:6:2', '37.2597611:126.6759114:6:2'
     ];
