@@ -70,7 +70,7 @@ function mqtt_connect(serverip) {
                     console.log('subscribe - ' + noti_topic);
 
                     if (conf.commLink === 'udp') {
-                        createTcpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
+                        createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
                     }
                     else if (conf.commLink === 'tcp') {
                         createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10));
@@ -338,23 +338,23 @@ var tcpCommLink = {};
 //     }
 // }
 
-function createUdpCommLink(sysid, port) {
+function createUdpCommLink(sys_id, port) {
     var udpSocket = udp.createSocket('udp4');
 
-    udpCommLink[sysid] = {};
-    udpCommLink[sysid].socket = udpSocket;
-    udpCommLink[sysid].port = port;
+    udpCommLink[sys_id] = {};
+    udpCommLink[sys_id].socket = udpSocket;
+    udpCommLink[sys_id].port = port;
 
     udpSocket.on('message', from_gcs);
 }
 
-function createTcpCommLink(sysid, port) {
+function createTcpCommLink(sys_id, port) {
     var _server = net.createServer(function (socket) {
-        console.log('socket connected [' + sysid + ']');
+        console.log('socket connected [' + sys_id + ']');
 
-        tcpCommLink[sysid] = {};
-        tcpCommLink[sysid].socket = socket;
-        tcpCommLink[sysid].port = port;
+        tcpCommLink[sys_id] = {};
+        tcpCommLink[sys_id].socket = socket;
+        tcpCommLink[sys_id].port = port;
 
         socket.on('data', from_gcs);
 
@@ -488,16 +488,22 @@ function send_to_gcs(content_each) {
     //     }
     // }
 
+    var sys_id = parseInt(sysid, 16);
+
     if(conf.commLink === 'udp') {
-        udpCommLink[sysid].socket.send(content_each, udpCommLink[sysid].port, 'localhost', function (error) {
-            if (error) {
-                udpCommLink[sysid].socket.close();
-                console.log('udpCommLink[' + sysid + '].socket is closed');
-            }
-        });
+        if(udpCommLink.hasOwnProperty(sys_id)) {
+            udpCommLink[sys_id].socket.send(content_each, udpCommLink[sys_id].port, 'localhost', function (error) {
+                if (error) {
+                    udpCommLink[sys_id].socket.close();
+                    console.log('udpCommLink[' + sys_id + '].socket is closed');
+                }
+            });
+        }
     }
     else if(conf.commLink === 'tcp') {
-        tcpCommLink[sysid].socket.write(content_each);
+        if(tcpCommLink.hasOwnProperty(sys_id)) {
+            tcpCommLink[sys_id].socket.write(content_each);
+        }
     }
 
 
@@ -542,7 +548,7 @@ function send_to_gcs(content_each) {
         }
 
         //console.log(content_each);
-        var sys_id = parseInt(sysid, 16).toString();
+        sys_id = parseInt(sysid, 16).toString();
         if (!hb.hasOwnProperty(sys_id)) {
             hb[sys_id] = {};
         }
@@ -553,9 +559,9 @@ function send_to_gcs(content_each) {
         hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
         hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
 
-        if (rc3_trim.hasOwnProperty(sysid)) {
+        if (rc3_trim.hasOwnProperty(sys_id)) {
             if (hb[sys_id].custom_mode == 0) {
-                rc3_trim[sys_id].param_value = rc3_min[sysid].param_value;
+                rc3_trim[sys_id].param_value = rc3_min[sys_id].param_value;
             }
             else {
                 rc3_trim[sys_id].param_value = (rc3_max[sys_id] + rc3_min[sys_id]) / 2

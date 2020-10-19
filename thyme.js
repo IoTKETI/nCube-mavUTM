@@ -42,7 +42,7 @@ conf.gcs = 'UTM_UVARC';
 
 conf.drone = [];
 
-global.drone_info_file = 'rkah_1_route.json'; //'rkah_1_route.json';
+global.drone_info_file = 'drone_info.json'; //'rkah_1_route.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
