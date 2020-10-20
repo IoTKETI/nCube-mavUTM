@@ -437,7 +437,6 @@ function from_gcs(msg) {
 }
 
 global.hb = {};
-hb.HEARTBEAT = {};
 
 global.gpi = {};
 global.rc1_max = {};
