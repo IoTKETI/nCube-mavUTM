@@ -2642,7 +2642,7 @@ function send_servo_param_set_command(target_name, pub_topic, target_sys_id, tar
     var btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
-    btn_params.param_id = "SERVO" + target_number;
+    btn_params.param_id = "SERVO" + target_number + "_FUNCTION";
     btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
     btn_params.param_value = target_val; // v = rw -> w = v / r.
 
@@ -2652,7 +2652,7 @@ function send_servo_param_set_command(target_name, pub_topic, target_sys_id, tar
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set SERVO' + target_number + ' command to %s\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set SERVO' + target_number + '_FUNCTION command to %s\n', target_name);
             term.moveTo.red(1, conf.drone.length + column_count++, 'msg: ' + msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
