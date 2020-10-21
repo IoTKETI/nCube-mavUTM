@@ -8,7 +8,7 @@ var term = require('terminal-kit').terminal;
 var command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'Auto_GoTo', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY','Follow', 'Params', 'Real_Control'];
 var cur_command_items = [];
 
-var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SYSID_THISMAV', 'Reboot',
+var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO', 'set_SYSID_THISMAV', 'Reboot',
     'get_Joystick_Params'];
 
 var follow_items = ['Back', 'set_Follow_Params', 'set_Follow'];
@@ -1559,6 +1559,51 @@ function allParamsMenu() {
                 }
             );
         }
+        else if (response.selectedText === 'set_SERVO') {
+            printFlag = 'disable';
+
+            term.eraseDisplayBelow();
+            term.moveTo.red(1, conf.drone.length + 3, 'Select Servo([number]:[val]): ');
+
+            term.inputField(
+                {history: history, autoComplete: ['cancel', '9:0', '9:51', '9:52', '9:52', '9:53', '9:54', '9:55', '9:56', '9:57', '9:58', '9:59', '9:60', '9:61', '9:62', '9:63', '9:64', '9:65', '9:66'], autoCompleteMenu: true},
+                function (error, input) {
+                    term('\n').eraseLineAfter.green(
+                        "%s selected\n",
+                        input
+                    );
+
+                    printFlag = 'enable';
+
+                    history.push(input);
+                    history.shift();
+
+                    if (input === 'cancel') {
+                        setTimeout(allParamsMenu, back_menu_delay);
+                    }
+                    else {
+
+                        var arr_input = input.split(':');
+                        var number = arr_input[0];
+                        var val = arr_input[1];
+
+                        column_count = 4;
+                        var command_delay = 0;
+                        for (var idx in cur_drone_list_selected) {
+                            if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                                var drone_selected = cur_drone_list_selected[idx].name;
+
+                                command_delay++;
+
+                                setTimeout(send_servo_param_set_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, val);
+                            }
+                        }
+
+                        setTimeout(allParamsMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
+                    }
+                }
+            );
+        }
         else if (response.selectedText === 'set_SYSID_THISMAV') {
             term.eraseDisplayBelow();
 
@@ -2585,6 +2630,30 @@ function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_i
         else {
             term.blue('Send set CIRCLE_RATE command to %s\n', target_name);
             term.red('msg: ' + msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
+function send_servo_param_set_command(target_name, pub_topic, target_sys_id, target_number, target_val) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "SERVO" + target_number;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
+    btn_params.param_value = target_val; // v = rw -> w = v / r.
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set SERVO' + target_number + ' command to %s\n', target_name);
+            term.moveTo.red(1, conf.drone.length + column_count++, 'msg: ' + msg.toString('hex') + '\n');
             mqtt_client.publish(pub_topic, msg);
         }
     }
