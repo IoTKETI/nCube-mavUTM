@@ -237,8 +237,6 @@ function allMenu() {
             allStartMissionMenu();
         }
         else if (response.selectedText === 'Follow') {
-            term('\n').eraseDisplayBelow();
-            console.log(cur_drone_selected)
             eachFollowMenu();
         }
         else if (response.selectedText === 'Params') {
@@ -385,7 +383,6 @@ function allTakeoffMenu() {
 function actionAllGoto(input) {
     cur_goto_position = input;
     var arr_goto_all_position = cur_goto_position.split('|');
-    goto_position_selected = [];
 
     var command_delay = 0;
     for (var idx in cur_drone_list_selected) {
@@ -1627,6 +1624,9 @@ function allParamsMenu() {
 var curEachFollowMenuIndex = 0;
 
 function eachFollowMenu() {
+    term.eraseDisplayBelow();
+    term.moveTo.red(1, conf.drone.length + 3, '');
+
     var _options = {
         y: 1,	// the menu will be on the top of the terminal
         style: term.inverse,
@@ -1635,7 +1635,7 @@ function eachFollowMenu() {
     };
 
     term.singleLineMenu(follow_items, _options, function (error, response) {
-        term('\n').eraseLineAfter.green(
+        term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
             response.selectedText,
@@ -1649,51 +1649,72 @@ function eachFollowMenu() {
             setTimeout(allMenu, back_menu_delay);
         }
         else if (response.selectedText === 'set_Follow_Params') {
+
+            printFlag = 'disable';
+
             term.eraseDisplayBelow();
-            term('Input Scripts ([sysid]:[dis_max]:[ofs_x]:[ofs_y]:[ofs_z]:[pos_p]): ');
+            term.moveTo.red(1, conf.drone.length + 3, 'Input Scripts ([sysid]:[dis_max]:[ofs_x]:[ofs_y]:[ofs_z]:[pos_p]): ');
 
             term.inputField(
                 {history: history, autoComplete: follow_params_items, autoCompleteMenu: true},
                 function (error, input) {
-                    term('\n').eraseLineAfter.green("%s selected\n", input);
+                    term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
+                        "%s selected\n", input);
+
+                    printFlag = 'enable';
 
                     if (input === 'cancel') {
-                        setTimeout(eachParamsMenu, back_menu_delay);
+                        setTimeout(eachFollowMenu, back_menu_delay);
                     }
                     else {
-                        var cur_follow_params = input;
-                        var arr_cur_follow_params = cur_follow_params.split(':');
+                        var arr_cur_follow_params = input.split(':');
 
-                        if(arr_cur_follow_params[0] == target_system_id[cur_drone_selected]) {
-                            term.red("target sysid for following is not same");
-                        }
-                        else {
-                            follow_mode[target_system_id[cur_drone_selected]].foll_sysid = parseInt(arr_cur_follow_params[0]);
-                            follow_mode[target_system_id[cur_drone_selected]].foll_dist_max = parseFloat(arr_cur_follow_params[1]);
-                            follow_mode[target_system_id[cur_drone_selected]].foll_ofs_x = parseFloat(arr_cur_follow_params[2]);
-                            follow_mode[target_system_id[cur_drone_selected]].foll_ofs_y = parseFloat(arr_cur_follow_params[3]);
-                            follow_mode[target_system_id[cur_drone_selected]].foll_ofs_z = parseFloat(arr_cur_follow_params[4]);
-                            follow_mode[target_system_id[cur_drone_selected]].foll_pos_p = parseFloat(arr_cur_follow_params[5]);
+                        var command_delay = 0;
+                        for (var idx in cur_drone_list_selected) {
+                            if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                                var drone_selected = cur_drone_list_selected[idx].name;
 
-                            console.log(follow_mode[target_system_id[cur_drone_selected]])
+                                command_delay++;
+
+                                if(arr_cur_follow_params[0] == target_system_id[drone_selected]) {
+                                    term.red("target sysid for following is not same");
+                                }
+                                else {
+                                    follow_mode[target_system_id[drone_selected]].foll_sysid = parseInt(arr_cur_follow_params[0]);
+                                    follow_mode[target_system_id[drone_selected]].foll_dist_max = parseFloat(arr_cur_follow_params[1]);
+                                    follow_mode[target_system_id[drone_selected]].foll_ofs_x = parseFloat(arr_cur_follow_params[2]);
+                                    follow_mode[target_system_id[drone_selected]].foll_ofs_y = parseFloat(arr_cur_follow_params[3]);
+                                    follow_mode[target_system_id[drone_selected]].foll_ofs_z = parseFloat(arr_cur_follow_params[4]);
+                                    follow_mode[target_system_id[drone_selected]].foll_pos_p = parseFloat(arr_cur_follow_params[5]);
+
+                                    term.eraseLineAfter.moveTo.green(1, conf.drone.length + 5, '');
+                                    console.log(follow_mode[target_system_id[drone_selected]])
+                                }
+                            }
                         }
+
                         setTimeout(eachFollowMenu, back_menu_delay * 2);
                     }
                 }
             );
         }
         else if (response.selectedText === 'set_Follow') {
+            printFlag = 'disable';
+
             term.eraseDisplayBelow();
-            term('Select Value: ');
+            term.moveTo.red(1, conf.drone.length + 3, 'Select Value: ');
 
             term.singleColumnMenu(['cancel', '0: disable', '1: enable'], function (error, response) {
-                term('\n').eraseLineAfter.green(
+                term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                     "#%s selected: %s (%s,%s)\n",
                     response.selectedIndex,
                     response.selectedText,
                     response.x,
                     response.y
                 );
+
+                printFlag = 'enable';
+
                 var input = response.selectedText;
                 if (input === 'cancel') {
                     setTimeout(eachFollowMenu, back_menu_delay);
@@ -1704,9 +1725,16 @@ function eachFollowMenu() {
 
                     var param_value = parseInt(response.selectedIndex, 10) - 1;
 
-                    follow_mode[target_system_id[cur_drone_selected]].foll_enable = param_value;
+                    var command_delay = 0;
+                    for (var idx in cur_drone_list_selected) {
+                        if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                            var drone_selected = cur_drone_list_selected[idx].name;
 
-                    console.log(param_value);
+                            command_delay++;
+
+                            follow_mode[target_system_id[drone_selected]].foll_enable = param_value;
+                        }
+                    }
 
                     setTimeout(eachFollowMenu, back_menu_delay * 2);
                 }
@@ -2775,44 +2803,46 @@ setInterval(function () {
             if(follow_mode[target_system_id[drone_selected]].foll_enable === 1) {
                 var foll_sysid = follow_mode[target_system_id[drone_selected]].foll_sysid;
 
-                if(target_system_id[drone_selected] != foll_sysid) {
-                    var cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
-                    var cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
-                    var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
+                if(target_system_id.hasOwnProperty(foll_sysid)) {
+                    if (target_system_id[drone_selected] != foll_sysid) {
+                        var cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
+                        var cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
+                        var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
 
-                    var result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
+                        var result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
 
-                    var tar_lat = (gpi[foll_sysid].lat / 10000000);
-                    var tar_lon = (gpi[foll_sysid].lon / 10000000);
-                    var tar_alt = gpi[foll_sysid].relative_alt / 1000;
+                        var tar_lat = (gpi[foll_sysid].lat / 10000000);
+                        var tar_lon = (gpi[foll_sysid].lon / 10000000);
+                        var tar_alt = gpi[foll_sysid].relative_alt / 1000;
 
-                    var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
+                        var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
-                    var dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
+                        var dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
 
-                    if((dist > follow_mode[target_system_id[drone_selected]].foll_dist_max) || (dist <= 4.0)) {
-                        var foll_x = result2.x - follow_mode[target_system_id[drone_selected]].foll_ofs_x;
-                        var foll_y = result2.y - follow_mode[target_system_id[drone_selected]].foll_ofs_y;
-                        var foll_z = tar_alt - follow_mode[target_system_id[drone_selected]].foll_ofs_z;
+                        if ((dist > follow_mode[target_system_id[drone_selected]].foll_dist_max) || (dist <= 4.0)) {
+                            var foll_x = result2.x - follow_mode[target_system_id[drone_selected]].foll_ofs_x;
+                            var foll_y = result2.y - follow_mode[target_system_id[drone_selected]].foll_ofs_y;
+                            var foll_z = tar_alt - follow_mode[target_system_id[drone_selected]].foll_ofs_z;
 
-                        var result3 = dfs_xy_conv('toLL', foll_x, foll_y);
+                            var result3 = dfs_xy_conv('toLL', foll_x, foll_y);
 
-                        command_delay++;
+                            command_delay++;
 
-                        // set GUIDED Mode
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
-                        base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                        send_set_mode_command(drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+                            // set GUIDED Mode
+                            var custom_mode = 4;
+                            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                            base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+                            send_set_mode_command(drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-                        var lat = parseFloat(result3.lat);
-                        var lon = parseFloat(result3.lon);
-                        var alt = parseFloat(foll_z);
-                        var speed = parseFloat(follow_mode[target_system_id[drone_selected]].foll_pos_p);
+                            var lat = parseFloat(result3.lat);
+                            var lon = parseFloat(result3.lon);
+                            var alt = parseFloat(foll_z);
+                            var speed = parseFloat(follow_mode[target_system_id[drone_selected]].foll_pos_p);
 
-                        setTimeout(send_goto_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], lat, lon, alt);
+                            setTimeout(send_goto_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], lat, lon, alt);
 
-                        setTimeout(send_change_speed_command, back_menu_delay + (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], speed);
+                            setTimeout(send_change_speed_command, back_menu_delay + (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], speed);
+                        }
                     }
                 }
             }
