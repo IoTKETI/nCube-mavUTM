@@ -249,7 +249,7 @@ function allMenu() {
             setTimeout(startMenu, back_menu_delay);
         }
     });
-}
+};
 
 function allArmMenu() {
     term.eraseDisplayBelow();
@@ -718,18 +718,18 @@ function allLandMenu() {
 
 var key = '';
 const map = new Map();
-// map.set('w', 'throttle_high');
-// map.set('a', 'yaw_left');
-// map.set('s', 'throttle_low');
-// map.set('d', 'yaw_right');
-// map.set('UP', 'pitch_forward');
-// map.set('LEFT', 'roll_left');
-// map.set('DOWN', 'pitch_backward');
-// map.set('RIGHT', 'roll_right');
-map.set('w', 'pitch_forward');
-map.set('a', 'roll_left');
-map.set('s', 'pitch_backward');
-map.set('d', 'roll_right');
+map.set('w', 'throttle_high');
+map.set('a', 'yaw_left');
+map.set('s', 'throttle_low');
+map.set('d', 'yaw_right');
+map.set('UP', 'pitch_forward');
+map.set('LEFT', 'roll_left');
+map.set('DOWN', 'pitch_backward');
+map.set('RIGHT', 'roll_right');
+// map.set('w', 'pitch_forward');
+// map.set('a', 'roll_left');
+// map.set('s', 'pitch_backward');
+// map.set('d', 'roll_right');
 map.set('9', 'alt_hold');
 map.set('7', 'loiter');
 
@@ -766,65 +766,61 @@ term.on('key', function (name, matches, data) {
                 base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                 send_set_mode_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected], base_mode, custom_mode);
             }
-            else if (command === 'throttle_high') {
+            else if (command === 'throttle_low') {
                 throttle_offset += gap;
                 if (throttle_offset >= MAX_OFFSET) {
                     throttle_offset = MAX_OFFSET;
                 }
-                console.log(command + ': ' + throttle_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
-            else if (command === 'throttle_low') {
+            else if (command === 'throttle_high') {
                 throttle_offset -= gap;
                 if (throttle_offset <= -MAX_OFFSET) {
                     throttle_offset = -MAX_OFFSET;
                 }
-                console.log(command + ': ' + throttle_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
             else if (command === 'yaw_left') {
                 yaw_offset -= gap;
                 if (yaw_offset <= -MAX_OFFSET) {
                     yaw_offset = -MAX_OFFSET;
                 }
-                console.log(command + ': ' + yaw_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 14, 'yaw: ' + yaw_offset);
             }
             else if (command === 'yaw_right') {
                 yaw_offset += gap;
                 if (yaw_offset >= MAX_OFFSET) {
                     yaw_offset = MAX_OFFSET;
                 }
-                console.log(command + ': ' + yaw_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 14, 'yaw: ' + yaw_offset);
             }
-            else if (command === 'pitch_forward') {
+            else if (command === 'pitch_backward') {
                 pitch_offset -= gap;
                 if (pitch_offset <= -MAX_OFFSET) {
                     pitch_offset = -MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 9, 'pitch:        ');
-                term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 15, 'pitch: ' + pitch_offset);
             }
-            else if (command === 'pitch_backward') {
+            else if (command === 'pitch_forward') {
                 pitch_offset += gap;
                 if (pitch_offset >= MAX_OFFSET) {
                     pitch_offset = MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 9, 'pitch:        ');
-                term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 15, 'pitch: ' + pitch_offset);
             }
             else if (command === 'roll_left') {
                 roll_offset -= gap;
                 if (roll_offset <= -MAX_OFFSET) {
                     roll_offset = -MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 10, 'roll:        ');
-                term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 16, 'roll: ' + roll_offset);
             }
             else if (command === 'roll_right') {
                 roll_offset += gap;
                 if (roll_offset >= MAX_OFFSET) {
                     roll_offset = MAX_OFFSET;
                 }
-                term.moveTo.cyan(1, 10, 'roll:        ');
-                term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
+                // term.moveTo.eraseLine.cyan(1, conf.drone.length + 16, 'roll: ' + roll_offset);
             }
 
             clearTimeout(keytimeout);
@@ -840,6 +836,32 @@ var keytimeout = setTimeout(key_release, 250);
 
 function key_release() {
     if (placeFlag === 'eachRealControlMenu') {
+        if (throttle_offset > 0) {
+            throttle_offset -= 10;
+            if (throttle_offset < 0) {
+                throttle_offset = 0;
+            }
+        }
+        else if (throttle_offset < 0) {
+            throttle_offset += 10;
+            if (throttle_offset > 0) {
+                throttle_offset = 0;
+            }
+        }
+
+        if (yaw_offset > 0) {
+            yaw_offset -= 10;
+            if (yaw_offset < 0) {
+                yaw_offset = 0;
+            }
+        }
+        else if (yaw_offset < 0) {
+            yaw_offset += 10;
+            if (yaw_offset > 0) {
+                yaw_offset = 0;
+            }
+        }
+
         if (pitch_offset > 0) {
             pitch_offset -= 10;
             if (pitch_offset < 0) {
@@ -866,21 +888,11 @@ function key_release() {
             }
         }
 
-        term.moveTo.cyan(1, 9, 'pitch:        ');
-        term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
-        term.moveTo.cyan(1, 10, 'roll:        ');
-        term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
-
-        if (roll_offset == 0 && pitch_offset == 0) {
+        if (roll_offset == 0 && pitch_offset == 0 && throttle_offset == 0 && yaw_offset == 0) {
         }
         else {
             setTimeout(key_release, 100);
         }
-
-        // throttle_offset = 0;
-        // yaw_offset = 0;
-        // roll_offset = 0;
-        // pitch_offset = 0;
     }
 }
 
@@ -1798,14 +1810,45 @@ function actionRealControl() {
         setTimeout(allMenu, back_menu_delay);
     }
     else {
-        if (rc1_trim.hasOwnProperty(target_system_id[cur_drone_selected])) {
+        column_count = 13;
 
-            send_joystick_command(cur_drone_selected, target_pub_topic[cur_drone_selected], target_system_id[cur_drone_selected]);
+        var command_delay = 0;
+        for (var idx in cur_drone_list_selected) {
+            if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                var drone_selected = cur_drone_list_selected[idx].name;
+
+                command_delay++;
+
+                if (rc1_trim.hasOwnProperty(target_system_id[drone_selected])) {
+                    var chan3_raw = rc3_trim[target_system_id[drone_selected]].param_value + throttle_offset;
+                    var chan4_raw = rc4_trim[target_system_id[drone_selected]].param_value + yaw_offset;
+                    var chan2_raw = rc2_trim[target_system_id[drone_selected]].param_value + pitch_offset;
+                    var chan1_raw = rc1_trim[target_system_id[drone_selected]].param_value + roll_offset;
+
+                    term.moveTo.eraseLine.cyan(1, conf.drone.length + column_count, '[' + drone_selected + '] throttle: ' + chan3_raw + '(' + throttle_offset +
+                        ') , yaw: ' + chan4_raw + '(' + yaw_offset +
+                        ') , pitch: ' + chan2_raw + '(' + pitch_offset +
+                        ') , roll: ' + chan1_raw + '(' + roll_offset + ')');
+                    setTimeout(send_joystick_command, command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
+                }
+                else {
+                    chan3_raw = 0;
+                    chan4_raw = 0;
+                    chan2_raw = 0;
+                    chan1_raw = 0;
+
+                    term.moveTo.eraseLine.cyan(1, conf.drone.length + column_count, '[' + drone_selected + '] throttle: ' + chan3_raw + '(' + throttle_offset +
+                        ') , yaw: ' + chan4_raw + '(' + yaw_offset +
+                        ') , pitch: ' + chan2_raw + '(' + pitch_offset +
+                        ') , roll: ' + chan1_raw + '(' + roll_offset + ')');
+                    term.moveTo.eraseLine.red(1, conf.drone.length + conf.drone.length + column_count, "The rc parsms value is not set.\n");
+                }
+
+                column_count++;
+            }
         }
-        else {
-            term.moveTo.red(1, 11, "The rc parsms value is not set.\n");
-        }
-        setTimeout(actionRealControl, 100);
+
+        setTimeout(actionRealControl, 100 + command_delay);
     }
 }
 
@@ -1816,11 +1859,18 @@ function eachRealControlMenu() {
     term.eraseDisplayBelow();
 
     //term.yellow("w: throttle up\ns: throttle down\na: yaw left\nd: yaw right\nup: pitch up\ndown: pitch down\nleft: roll left\nright: roll right\n");
-    term.yellow("w: pitch forward\ns: pitch backward\na: roll left\nd: roll right\n7: loiter\n9: loiter");
-    term.moveTo.cyan(1, 9, 'pitch: ' + pitch_offset);
-    term.moveTo.cyan(1, 10, 'roll: ' + roll_offset);
+    term.yellow("w: throttle_high\n" +
+    "a: yaw_left\n" +
+    "s: throttle_low\n" +
+    "d: yaw_right\n" +
+    "UP: pitch_forward\n" +
+    "LEFT: roll_left\n" +
+    "DOWN: pitch_backward\n" +
+    "RIGHT: roll_right\n" +
+    "7: loiter\n" +
+    "9: alt_hold");
 
-    setTimeout(actionRealControl, 50);
+    setTimeout(actionRealControl, 1000);
 }
 
 setTimeout(startMenu, back_menu_delay);
@@ -2749,7 +2799,7 @@ setInterval(function () {
 
                     goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
 
-                    term.moveTo.eraseLineAfter.magenta(1, parseInt(idx, 10) + 2, "[%s] %s:%s:%s:%s [%s] [%s] [%s]", drone_selected, cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
+                    term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s] %s:%s:%s:%s [%s] [%s] [%s]", drone_selected, cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
                 // }
                 // else {
                 //     term.moveTo.magenta(1, parseInt(idx, 10) + 2, "[%s] %s:%s:%s:%s [%s] [%s]                               ", drone_selected, cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode);
@@ -2830,8 +2880,7 @@ function send_joystick_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, 9, 'Send joystick command to %s\n', target_name);
-            term.moveTo.red(1, 10, 'msg: ' + msg.toString('hex') + '\n');
+            term.moveTo.blue(1, conf.drone.length + conf.drone.length + column_count, 'Send joystick command to %s' + 'msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
