@@ -554,7 +554,7 @@ function send_to_gcs(content_each) {
         hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
         hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
 
-        if (rc3_trim.hasOwnProperty(sys_id)) {
+        if (rc3_trim.hasOwnProperty(sys_id) && rc3_max.hasOwnProperty(sys_id) && rc3_min.hasOwnProperty(sys_id)) {
             if (hb[sys_id].custom_mode == 0) {
                 rc3_trim[sys_id].param_value = rc3_min[sys_id].param_value;
             }

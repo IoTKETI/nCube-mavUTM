@@ -8,7 +8,7 @@ var term = require('terminal-kit').terminal;
 var command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'Auto_GoTo', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY','Follow', 'Params', 'Real_Control'];
 var cur_command_items = [];
 
-var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO', 'set_SYSID_THISMAV', 'Reboot',
+var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO_Param', 'set_SYSID_THISMAV', 'Reboot',
     'get_Joystick_Params'];
 
 var follow_items = ['Back', 'set_Follow_Params', 'set_Follow'];
@@ -1173,10 +1173,10 @@ function allSetRelayMenu() {
     printFlag = 'disable';
 
     term.eraseDisplayBelow();
-    term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[PWM]): ');
+    term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[val]): ');
 
     term.inputField(
-        {history: history, autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1', '5:1', '6:0', '7:0'], autoCompleteMenu: true},
+        {history: history, autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1'], autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -1574,7 +1574,7 @@ function allParamsMenu() {
                 }
             );
         }
-        else if (response.selectedText === 'set_SERVO') {
+        else if (response.selectedText === 'set_SERVO_Param') {
             printFlag = 'disable';
 
             term.eraseDisplayBelow();
@@ -1822,7 +1822,8 @@ function actionRealControl() {
 
                 command_delay++;
 
-                if (rc1_trim.hasOwnProperty(target_system_id[drone_selected])) {
+                if (rc1_trim.hasOwnProperty(target_system_id[drone_selected]) && rc2_trim.hasOwnProperty(target_system_id[drone_selected]) &&
+                    rc3_trim.hasOwnProperty(target_system_id[drone_selected]) && rc4_trim.hasOwnProperty(target_system_id[drone_selected])) {
                     var chan3_raw = rc3_trim[target_system_id[drone_selected]].param_value + throttle_offset;
                     var chan4_raw = rc4_trim[target_system_id[drone_selected]].param_value + yaw_offset;
                     var chan2_raw = rc2_trim[target_system_id[drone_selected]].param_value + pitch_offset;
