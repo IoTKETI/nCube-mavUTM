@@ -733,7 +733,7 @@ map.set('9', 'alt_hold');
 map.set('7', 'loiter');
 
 const MAX_OFFSET = 128;
-const gap = 2;
+const gap = 16;
 
 term.grabInput();
 
@@ -767,15 +767,15 @@ term.on('key', function (name, matches, data) {
             }
             else if (command === 'throttle_low') {
                 throttle_offset += gap;
-                if (throttle_offset >= MAX_OFFSET) {
-                    throttle_offset = MAX_OFFSET;
+                if (throttle_offset >= (MAX_OFFSET*2)) {
+                    throttle_offset = (MAX_OFFSET*2);
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
             else if (command === 'throttle_high') {
                 throttle_offset -= gap;
-                if (throttle_offset <= -MAX_OFFSET) {
-                    throttle_offset = -MAX_OFFSET;
+                if (throttle_offset <= -(MAX_OFFSET*2)) {
+                    throttle_offset = -(MAX_OFFSET*2);
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
@@ -836,52 +836,52 @@ var keytimeout = setTimeout(key_release, 250);
 function key_release() {
     if (placeFlag === 'eachRealControlMenu') {
         if (throttle_offset > 0) {
-            throttle_offset -= 10;
+            throttle_offset -= (gap*4);
             if (throttle_offset < 0) {
                 throttle_offset = 0;
             }
         }
         else if (throttle_offset < 0) {
-            throttle_offset += 10;
+            throttle_offset += (gap*4);
             if (throttle_offset > 0) {
                 throttle_offset = 0;
             }
         }
 
         if (yaw_offset > 0) {
-            yaw_offset -= 10;
+            yaw_offset -= (gap*4);
             if (yaw_offset < 0) {
                 yaw_offset = 0;
             }
         }
         else if (yaw_offset < 0) {
-            yaw_offset += 10;
+            yaw_offset += (gap*4);
             if (yaw_offset > 0) {
                 yaw_offset = 0;
             }
         }
 
         if (pitch_offset > 0) {
-            pitch_offset -= 10;
+            pitch_offset -= (gap*4);
             if (pitch_offset < 0) {
                 pitch_offset = 0;
             }
         }
         else if (pitch_offset < 0) {
-            pitch_offset += 10;
+            pitch_offset += (gap*4);
             if (pitch_offset > 0) {
                 pitch_offset = 0;
             }
         }
 
         if (roll_offset > 0) {
-            roll_offset -= 10;
+            roll_offset -= (gap*4);
             if (roll_offset < 0) {
                 roll_offset = 0;
             }
         }
         else if (roll_offset < 0) {
-            roll_offset += 10;
+            roll_offset += (gap*4);
             if (roll_offset > 0) {
                 roll_offset = 0;
             }
