@@ -1271,47 +1271,50 @@ function result_all_param_get_command() {
     for (var idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
             var drone_selected = cur_drone_list_selected[idx].name;
-            for (var param_idx in jostick_params) {
-                if (jostick_params.hasOwnProperty(param_idx)) {
-                    var target = jostick_params[param_idx];
-                    if (target === 'RC1_MAX') {
-                        var cur_param_value = rc1_max[target_system_id[drone_selected]].param_value;
+            if(rc1_max.hasOwnProperty(target_system_id[drone_selected])) {
+                for (var param_idx in jostick_params) {
+                    if (jostick_params.hasOwnProperty(param_idx)) {
+                        var target = jostick_params[param_idx];
+
+                        if (target === 'RC1_MAX') {
+                            var cur_param_value = rc1_max[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC1_MIN') {
+                            cur_param_value = rc1_min[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC1_TRIM') {
+                            cur_param_value = rc1_trim[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC2_MAX') {
+                            cur_param_value = rc2_max[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC2_MIN') {
+                            cur_param_value = rc2_min[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC2_TRIM') {
+                            cur_param_value = rc2_trim[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC3_MAX') {
+                            cur_param_value = rc3_max[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC3_MIN') {
+                            cur_param_value = rc3_min[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC3_TRIM') {
+                            cur_param_value = rc3_trim[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC4_MAX') {
+                            cur_param_value = rc4_max[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC4_MIN') {
+                            cur_param_value = rc4_min[target_system_id[drone_selected]].param_value;
+                        }
+                        else if (target === 'RC4_TRIM') {
+                            cur_param_value = rc4_trim[target_system_id[drone_selected]].param_value;
+                        }
+                        term.moveTo.cyan(1, parseInt(idx, 10) * jostick_params.length + 2 + parseInt(param_idx, 10), "                                                                        ");
+                        term.moveTo.cyan(1, parseInt(idx, 10) * jostick_params.length + 2 + parseInt(param_idx, 10), "%s [%s] %s", target, drone_selected, cur_param_value);
                     }
-                    else if (target === 'RC1_MIN') {
-                        cur_param_value = rc1_min[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC1_TRIM') {
-                        cur_param_value = rc1_trim[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC2_MAX') {
-                        cur_param_value = rc2_max[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC2_MIN') {
-                        cur_param_value = rc2_min[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC2_TRIM') {
-                        cur_param_value = rc2_trim[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC3_MAX') {
-                        cur_param_value = rc3_max[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC3_MIN') {
-                        cur_param_value = rc3_min[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC3_TRIM') {
-                        cur_param_value = rc3_trim[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC4_MAX') {
-                        cur_param_value = rc4_max[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC4_MIN') {
-                        cur_param_value = rc4_min[target_system_id[drone_selected]].param_value;
-                    }
-                    else if (target === 'RC4_TRIM') {
-                        cur_param_value = rc4_trim[target_system_id[drone_selected]].param_value;
-                    }
-                    term.moveTo.cyan(1, parseInt(idx, 10) * jostick_params.length + 2 + parseInt(param_idx, 10), "                                                                        ");
-                    term.moveTo.cyan(1, parseInt(idx, 10) * jostick_params.length + 2 + parseInt(param_idx, 10), "%s [%s] %s", target, drone_selected, cur_param_value);
                 }
             }
         }

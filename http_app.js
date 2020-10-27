@@ -559,7 +559,7 @@ function send_to_gcs(content_each) {
                 rc3_trim[sys_id].param_value = rc3_min[sys_id].param_value;
             }
             else {
-                rc3_trim[sys_id].param_value = (rc3_max[sys_id] + rc3_min[sys_id]) / 2
+                rc3_trim[sys_id].param_value = (rc3_max[sys_id].param_value + rc3_min[sys_id].param_value) / 2;
             }
         }
     }
