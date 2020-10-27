@@ -388,7 +388,7 @@ function actionAllGoto(input) {
     for (var idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
             var drone_selected = cur_drone_list_selected[idx].name;
-            cur_goto_position = arr_goto_all_position[goto_all_index[cur_drone_list_selected[idx].name]];
+            cur_goto_position = arr_goto_all_position[goto_all_index[drone_selected]];
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
@@ -399,7 +399,6 @@ function actionAllGoto(input) {
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-            goto_position_selected[idx] = cur_goto_position;
             var arr_cur_goto_position = cur_goto_position.split(':');
             var lat = parseFloat(arr_cur_goto_position[0]);
             var lon = parseFloat(arr_cur_goto_position[1]);
@@ -421,7 +420,7 @@ function actionAllGotoCircle(input) {
     for (var idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
             var drone_selected = cur_drone_list_selected[idx].name;
-            cur_goto_position = arr_goto_all_position[goto_all_index[cur_drone_list_selected[idx].name]];
+            cur_goto_position = arr_goto_all_position[goto_all_index[drone_selected]];
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
@@ -430,7 +429,6 @@ function actionAllGotoCircle(input) {
             var custom_mode = 4;
             var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-
             setTimeout(send_set_mode_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
             var arr_cur_goto_position = cur_goto_position.split(':');
@@ -543,6 +541,7 @@ function allGotoAltMenu() {
 var curAllGotoCircleIndex = 0;
 
 function allGotoCircleMenu() {
+    placeFlag = 'allGotoCircleMenu';
     printFlag = 'disable';
 
     term('').eraseLineAfter.moveTo(1, 2, "");
@@ -733,7 +732,7 @@ map.set('RIGHT', 'roll_right');
 map.set('9', 'alt_hold');
 map.set('7', 'loiter');
 
-const MAX_OFFSET = 64;
+const MAX_OFFSET = 128;
 const gap = 2;
 
 term.grabInput();
@@ -794,14 +793,14 @@ term.on('key', function (name, matches, data) {
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 14, 'yaw: ' + yaw_offset);
             }
-            else if (command === 'pitch_backward') {
+            else if (command === 'pitch_forward') {
                 pitch_offset -= gap;
                 if (pitch_offset <= -MAX_OFFSET) {
                     pitch_offset = -MAX_OFFSET;
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 15, 'pitch: ' + pitch_offset);
             }
-            else if (command === 'pitch_forward') {
+            else if (command === 'pitch_backward') {
                 pitch_offset += gap;
                 if (pitch_offset >= MAX_OFFSET) {
                     pitch_offset = MAX_OFFSET;
@@ -2219,9 +2218,10 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     btn_params.target_component = 1;
     btn_params.seq = 0;
     btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
-    btn_params.current = 2;
+    btn_params.mission_type = 0;
+    btn_params.current = 1;
     btn_params.autocontinue = 1;
+    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
     btn_params.param1 = 0;
     btn_params.param2 = 0;
     btn_params.param3 = 0;
@@ -2229,7 +2229,6 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     btn_params.param5 = latitude;
     btn_params.param6 = longitude;
     btn_params.param7 = rel_altitude;
-    btn_params.mission_type = 0;
 
     //console.log(latitude, longitude, rel_altitude);
 
@@ -2255,19 +2254,17 @@ function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitud
     btn_params.target_component = 1;
     btn_params.seq = 0;
     btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_LOITER_TURNS;
-    btn_params.current = 2;
+    btn_params.mission_type = 0;
+    btn_params.current = 1;
     btn_params.autocontinue = 1;
+    btn_params.command = mavlink.MAV_CMD_NAV_LOITER_TURNS;
     btn_params.param1 = 1; // Number of turns (N x 360°)
     btn_params.param2 = 0;
-    btn_params.param3 = 0;
+    btn_params.param3 = 10; // Loiter radius around waypoint for forward-only moving vehicles (not multicopters). If positive loiter clockwise, else counter-clockwise
     btn_params.param4 = 0;
     btn_params.param5 = latitude; // Target latitude. If zero, the vehicle will loiter at the current latitude.
     btn_params.param6 = longitude; // Target longitude. If zero, the vehicle will loiter at the current longitude.
     btn_params.param7 = rel_altitude; // Target altitude. If zero, the vehicle will loiter at the current altitude.
-    btn_params.mission_type = 0;
-
-    //console.log(latitude, longitude, rel_altitude);
 
     try {
         var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
@@ -2275,8 +2272,7 @@ function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitud
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s\n', target_name);
-            term.moveTo.red(1, conf.drone.length + column_count++, 'msg: ' + msg.toString('hex') + '\n');
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
@@ -2291,9 +2287,10 @@ function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
     btn_params.target_component = 1;
     btn_params.seq = 0;
     btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
-    btn_params.current = 2;
+    btn_params.mission_type = 0;
+    btn_params.current = 1;
     btn_params.autocontinue = 1;
+    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
     btn_params.param1 = 0;
     btn_params.param2 = 0;
     btn_params.param3 = 0;
@@ -2301,7 +2298,6 @@ function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
     btn_params.param5 = 0;
     btn_params.param6 = 0;
     btn_params.param7 = rel_altitude;
-    btn_params.mission_type = 0;
 
     // var btn_params = {};
     // btn_params.target_system = target_sys_id;
@@ -2884,7 +2880,7 @@ function send_joystick_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + conf.drone.length + column_count, 'Send joystick command to %s' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + conf.drone.length + column_count, 'Send joystick command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
