@@ -2758,6 +2758,8 @@ mavlink.messages.mission_count = function(target_system, target_component, count
 mavlink.messages.mission_count.prototype = new mavlink.message;
 
 mavlink.messages.mission_count.prototype.pack = function(mav) {
+    mav.seq = (mav.seq + sequence) % 256;	// add
+    sequence++;	// add
     return mavlink.message.prototype.pack.call(this, mav, this.crc_extra, jspack.Pack(this.format, [ this.count, this.target_system, this.target_component, this.mission_type]));
 }
 
@@ -2787,6 +2789,8 @@ mavlink.messages.mission_clear_all = function(target_system, target_component, m
 mavlink.messages.mission_clear_all.prototype = new mavlink.message;
 
 mavlink.messages.mission_clear_all.prototype.pack = function(mav) {
+    mav.seq = (mav.seq + sequence) % 256;	// add
+    sequence++;	// add
     return mavlink.message.prototype.pack.call(this, mav, this.crc_extra, jspack.Pack(this.format, [ this.target_system, this.target_component, this.mission_type]));
 }
 
@@ -3445,6 +3449,8 @@ mavlink.messages.mission_item_int = function(target_system, target_component, se
 mavlink.messages.mission_item_int.prototype = new mavlink.message;
 
 mavlink.messages.mission_item_int.prototype.pack = function(mav) {
+    mav.seq = (mav.seq + sequence) % 256;	// add
+    sequence++;	// add
     return mavlink.message.prototype.pack.call(this, mav, this.crc_extra, jspack.Pack(this.format, [ this.param1, this.param2, this.param3, this.param4, this.x, this.y, this.z, this.seq, this.command, this.target_system, this.target_component, this.frame, this.current, this.autocontinue, this.mission_type]));
 }
 

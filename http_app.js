@@ -18,6 +18,7 @@ var mqtt = require('mqtt');
 var net = require('net');
 var udp = require('dgram');
 
+var mavlink = require('./mavlibrary/mavlink.js');
 
 mqtt_connect(conf.cse.host);
 
@@ -424,6 +425,31 @@ function from_gcs(msg) {
 
     var sys_id = parseInt(sysid, 16);
 
+    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
+        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + content);
+    }
+
     if(sys_id == conf.gcs_sys_id) {
         for (var idx in conf.drone) {
             if (conf.drone.hasOwnProperty(idx)) {
@@ -453,6 +479,9 @@ global.rc4_min = {};
 global.rc4_trim = {};
 
 global.resetGpiTimer = {};
+
+global.result_mission_ack = {};
+global.mission_request = {};
 
 function resetGpiValue(sys_id) {
     gpi[sys_id].time_boot_ms = 0;
@@ -512,7 +541,7 @@ function send_to_gcs(content_each) {
     // }
 
 
-    if (msgid == '00') { // #00 : HEARTBEAT
+    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
         if (ver == 'fd') {
             var base_offset = 20;
             var custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
@@ -784,6 +813,82 @@ function send_to_gcs(content_each) {
             rc4_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
         }
     }
+
+    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_each_hex);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) { // #33 - global_position_int
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_each_hex);
+
+        if (ver == 'fd') {
+            base_offset = 20;
+            var mission_sequence = content_each_hex.substr(base_offset, 4).toLowerCase();
+            base_offset += 4;
+            var target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            var target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            var mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+        }
+        else {
+            base_offset = 12;
+            mission_sequence = content_each_hex.substr(base_offset, 4).toLowerCase();
+            base_offset += 4;
+            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+        }
+
+        if(mission_request.hasOwnProperty(sys_id)) {
+            var mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
+            mission_request[sys_id].target_system = mission_result;
+            mission_result = Buffer.from(mission_sequence, 'hex').readUInt16LE(0);
+            mission_request[sys_id].seq = mission_result;
+        }
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) { // #33 - global_position_int
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_each_hex);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_each_hex);
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_each_hex);
+
+        if (ver == 'fd') {
+            base_offset = 20;
+            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            var mission_result_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+        }
+        else {
+            base_offset = 12;
+            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            mission_result_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_offset += 2;
+            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+        }
+
+        if(result_mission_ack.hasOwnProperty(sys_id)) {
+            mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
+            result_mission_ack[sys_id].target_system = mission_result;
+            mission_result = Buffer.from(mission_result_type, 'hex').readUInt8(0);
+            result_mission_ack[sys_id].type = mission_result;
+        }
+    }
+    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) { // #33 - global_position_int
+        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_each_hex);
+    }
+
 
     // if(sysid == '37' ) {
     //     console.log('55 - ' + content_each);

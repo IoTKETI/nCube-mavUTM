@@ -379,7 +379,7 @@ function actionAllGoto(input) {
     for (var idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
             var drone_selected = cur_drone_list_selected[idx].name;
-            cur_goto_position = arr_goto_all_position[goto_all_index[drone_selected]];
+            cur_goto_position = arr_goto_all_position[idx];
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
@@ -411,7 +411,7 @@ function actionAllGotoCircle(input) {
     for (var idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
             var drone_selected = cur_drone_list_selected[idx].name;
-            cur_goto_position = arr_goto_all_position[goto_all_index[drone_selected]];
+            cur_goto_position = arr_goto_all_position[idx];
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
@@ -596,8 +596,6 @@ function allGotoCircleMenu() {
 
             column_count = 3;
             actionAllGotoCircle(input);
-
-            setTimeout(allMenu, back_menu_delay + back_menu_delay * (cur_drone_list_selected.length + 1));
         }
     });
 }
@@ -2106,6 +2104,22 @@ function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
                     params.param7);
                 break;
 
+            case mavlink.MAVLINK_MSG_ID_COMMAND_INT:
+                mavMsg = new mavlink.messages.mission_item(params.target_system,
+                    params.target_component,
+                    params.frame,
+                    params.command,
+                    params.current,
+                    params.autocontinue,
+                    params.param1,
+                    params.param2,
+                    params.param3,
+                    params.param4,
+                    params.param5,
+                    params.param6,
+                    params.param7);
+                break;
+
             case mavlink.MAVLINK_MSG_ID_MISSION_ITEM:
                 mavMsg = new mavlink.messages.mission_item(params.target_system,
                     params.target_component,
@@ -2121,6 +2135,37 @@ function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
                     params.param5,
                     params.param6,
                     params.param7,
+                    params.mission_type);
+                break;
+
+            case mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT:
+                mavMsg = new mavlink.messages.mission_item_int(params.target_system,
+                    params.target_component,
+                    params.seq,
+                    params.frame,
+                    params.command,
+                    params.current,
+                    params.autocontinue,
+                    params.param1,
+                    params.param2,
+                    params.param3,
+                    params.param4,
+                    params.param5,
+                    params.param6,
+                    params.param7,
+                    params.mission_type);
+                break;
+
+            case mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
+                mavMsg = new mavlink.messages.mission_clear_all(params.target_system,
+                    params.target_component,
+                    params.mission_type);
+                break;
+
+            case mavlink.MAVLINK_MSG_ID_MISSION_COUNT:
+                mavMsg = new mavlink.messages.mission_count(params.target_system,
+                    params.target_component,
+                    params.count,
                     params.mission_type);
                 break;
 
@@ -2249,26 +2294,41 @@ function send_start_mission_command(target_name, pub_topic, target_sys_id, param
     }
 }
 
+function send_takeoff_command2(target_name, pub_topic, target_sys_id, alt) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.seq = 0;
+    btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
+    btn_params.command = mavlink.MAV_CMD_NAV_TAKEOFF;
+    btn_params.current = 2;
+    btn_params.autocontinue = 0;
+    btn_params.param1 = 0; // Minimum pitch (if airspeed sensor present)
+    btn_params.param2 = 0; // Empty
+    btn_params.param3 = 0; // Empty
+    btn_params.param4 = 0; // Yaw angle
+    btn_params.param5 = 0; // Latitude
+    btn_params.param6 = 0; // Longitude
+    btn_params.param7 = alt; // Altitude
+    btn_params.mission_type = 0;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Takeoff command to %s\n', target_name);
+            term.moveTo.red(1, conf.drone.length + column_count++, 'msg: ' + msg.toString('hex') + '\n');
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
 function send_takeoff_command(target_name, pub_topic, target_sys_id, alt) {
-    // var btn_params = {};
-    // btn_params.target_system = target_sys_id;
-    // btn_params.target_component = 1;
-    // btn_params.seq = 0;
-    // btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    // btn_params.command = mavlink.MAV_CMD_NAV_TAKEOFF;
-    // btn_params.current = 2;
-    // btn_params.autocontinue = 1;
-    // btn_params.param1 = 0; // Minimum pitch (if airspeed sensor present)
-    // btn_params.param2 = 0; // Empty
-    // btn_params.param3 = 0; // Empty
-    // btn_params.param4 = 0; // Yaw angle
-    // btn_params.param5 = 0; // Latitude
-    // btn_params.param6 = 0; // Longitude
-    // btn_params.param7 = alt; // Altitude
-    // btn_params.mission_type = 0;
-
-    // var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-
     var btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
@@ -2360,10 +2420,9 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     btn_params.target_component = 1;
     btn_params.seq = 0;
     btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.mission_type = 0;
-    btn_params.current = 1;
-    btn_params.autocontinue = 1;
     btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
+    btn_params.current = 2;
+    btn_params.autocontinue = 0;
     btn_params.param1 = 0;
     btn_params.param2 = 0;
     btn_params.param3 = 0;
@@ -2371,6 +2430,7 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     btn_params.param5 = latitude;
     btn_params.param6 = longitude;
     btn_params.param7 = rel_altitude;
+    btn_params.mission_type = 0;
 
     //console.log(latitude, longitude, rel_altitude);
 
@@ -2380,8 +2440,7 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s\n', target_name);
-            term.moveTo.red(1, conf.drone.length + column_count++, 'msg: ' + msg.toString('hex') + '\n');
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
@@ -2390,23 +2449,66 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     }
 }
 
-function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
+
+function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
+    if(mission_request[target_sys_id].seq == 0) {
+        term.moveTo.blue(1, conf.drone.length + column_count++, mission_request[target_sys_id].seq + ' MISSION REQUEST from %s', target_name);
+
+        setTimeout(send_mission_protocol, 1, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, mission_request[target_sys_id].seq);
+    }
+    else if(mission_request[target_sys_id].seq == 1) {
+        term.moveTo.blue(1, conf.drone.length + column_count++, mission_request[target_sys_id].seq + ' MISSION REQUEST from %s', target_name);
+
+        setTimeout(send_mission_protocol, 1, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, mission_request[target_sys_id].seq);
+    }
+    else {
+        term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
+    }
+}
+
+function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, seq) {
     var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.seq = 0;
-    btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.mission_type = 0;
-    btn_params.current = 1;
-    btn_params.autocontinue = 1;
-    btn_params.command = mavlink.MAV_CMD_NAV_LOITER_TURNS;
-    btn_params.param1 = 1; // Number of turns (N x 360°)
-    btn_params.param2 = 0;
-    btn_params.param3 = 10; // Loiter radius around waypoint for forward-only moving vehicles (not multicopters). If positive loiter clockwise, else counter-clockwise
-    btn_params.param4 = 0;
-    btn_params.param5 = latitude; // Target latitude. If zero, the vehicle will loiter at the current latitude.
-    btn_params.param6 = longitude; // Target longitude. If zero, the vehicle will loiter at the current longitude.
-    btn_params.param7 = rel_altitude; // Target altitude. If zero, the vehicle will loiter at the current altitude.
+
+    if(seq == 0) {
+        var lat = gpi[target_system_id[target_name]].lat / 10000000;
+        var lon = gpi[target_system_id[target_name]].lon / 10000000;
+        var alt = gpi[target_system_id[target_name]].relative_alt / 1000;
+
+        btn_params.target_system = target_sys_id;
+        btn_params.target_component = 1;
+        btn_params.seq = 0;
+        btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
+        btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
+        btn_params.current = 1;
+        btn_params.autocontinue = 0;
+        btn_params.param1 = 0;
+        btn_params.param2 = 0;
+        btn_params.param3 = 0;
+        btn_params.param4 = 0;
+        btn_params.param5 = lat;
+        btn_params.param6 = lon;
+        btn_params.param7 = alt;
+        btn_params.mission_type = 0;
+    }
+    else {
+        btn_params.target_system = target_sys_id;
+        btn_params.target_component = 1;
+        btn_params.seq = seq;
+        btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
+        btn_params.command = mavlink.MAV_CMD_NAV_LOITER_TURNS;
+        btn_params.current = 0;
+        btn_params.autocontinue = 1;
+        btn_params.param1 = 1;
+        btn_params.param2 = 0;
+        btn_params.param3 = 10;
+        btn_params.param4 = 0;
+        btn_params.param5 = latitude;
+        btn_params.param6 = longitude;
+        btn_params.param7 = rel_altitude;
+        btn_params.mission_type = 0;
+    }
+
+    //console.log(latitude, longitude, rel_altitude);
 
     try {
         var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
@@ -2414,8 +2516,89 @@ function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitud
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_ITEM to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
+
+            if(seq < 1) {
+                setTimeout(result_mission_protocol, 500, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
+
+                if (!mission_request.hasOwnProperty(target_sys_id)) {
+                    mission_request[target_sys_id] = {};
+                }
+                mission_request[target_sys_id].seq = 0;
+            }
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
+function send_mission_count(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.count = 2;
+    btn_params.mission_type = 0;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_COUNT, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_COUNT to %s, msg: ' + msg.toString('hex') + '\n', target_name);
+            mqtt_client.publish(pub_topic, msg);
+
+            setTimeout(result_mission_protocol, 500, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
+
+            if(!mission_request.hasOwnProperty(target_sys_id)) {
+                mission_request[target_sys_id] = {};
+            }
+            mission_request[target_sys_id].seq = 0;
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
+
+function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
+    if(result_mission_ack[target_sys_id].type == 0) {
+        term.moveTo.blue(1, conf.drone.length + column_count++, 'Clear All Mission of %s', target_name);
+
+        setTimeout(send_mission_count, 1, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
+    }
+    else {
+        term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Clear Error at %s', target_name);
+    }
+
+    setTimeout(allMenu, 3000);
+}
+
+function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
+
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.mission_type = 0;
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Mission Clear All command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
+            mqtt_client.publish(pub_topic, msg);
+
+            if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
+                result_mission_ack[target_sys_id] = {};
+            }
+            result_mission_ack[target_sys_id].type = 255;
+
+            setTimeout(result_mission_clear_all, 600, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
         }
     }
     catch (ex) {
@@ -2429,10 +2612,9 @@ function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
     btn_params.target_component = 1;
     btn_params.seq = 0;
     btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.mission_type = 0;
-    btn_params.current = 1;
-    btn_params.autocontinue = 1;
     btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
+    btn_params.current = 2;
+    btn_params.autocontinue = 0;
     btn_params.param1 = 0;
     btn_params.param2 = 0;
     btn_params.param3 = 0;
@@ -2440,6 +2622,7 @@ function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
     btn_params.param5 = 0;
     btn_params.param6 = 0;
     btn_params.param7 = rel_altitude;
+    btn_params.mission_type = 0;
 
     // var btn_params = {};
     // btn_params.target_system = target_sys_id;
@@ -2455,7 +2638,7 @@ function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
     // btn_params.param7 = rel_altitude; // Altitude
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT, btn_params);
         //var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
         if (msg == null) {
             console.log("mavlink message is null");

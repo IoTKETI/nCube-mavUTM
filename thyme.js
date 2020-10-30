@@ -68,7 +68,6 @@ conf.running_type = 'local';        // 'local' or 'global' : When this is worked
 
 conf.use_terminal = 'enable'; //'enable';
 
-
 if (conf.use_terminal === 'enable') {
     require('./terminal_app');
 }
