@@ -60,51 +60,51 @@ function mqtt_connect(serverip) {
         }
 
         mqtt_client = mqtt.connect(connectOptions);
-    }
 
-    mqtt_client.on('connect', function () {
-        if (conf.running_type === 'local') {
-            for (var idx in conf.drone) {
-                if (conf.drone.hasOwnProperty(idx)) {
-                    var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
-                    mqtt_client.subscribe(noti_topic);
-                    console.log('subscribe - ' + noti_topic);
+        mqtt_client.on('connect', function () {
+            if (conf.running_type === 'local') {
+                for (var idx in conf.drone) {
+                    if (conf.drone.hasOwnProperty(idx)) {
+                        var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                        mqtt_client.subscribe(noti_topic);
+                        console.log('subscribe - ' + noti_topic);
 
-                    if (conf.commLink === 'udp') {
-                        createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
-                    }
-                    else if (conf.commLink === 'tcp') {
-                        createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10));
+                        if (conf.commLink === 'udp') {
+                            createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
+                        }
+                        else if (conf.commLink === 'tcp') {
+                            createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10));
+                        }
                     }
                 }
             }
-        }
-        else if (conf.running_type === 'global') {
-            retrieve_drone();
-        }
-        else {
-            console.log('[mqtt_client.on] conf.running_type is incorrect');
-        }
-    });
-
-    mqtt_client.on('message', function (topic, message) {
-        if (message[0] == 0xfe || message[0] == 0xfd) {
-            send_to_gcs(message);
-        }
-        else if (topic.includes('/oneM2M/req/')) {
-            var jsonObj = JSON.parse(message.toString());
-
-            if (jsonObj['m2m:rqp'] == null) {
-                jsonObj['m2m:rqp'] = jsonObj;
+            else if (conf.running_type === 'global') {
+                retrieve_drone();
             }
+            else {
+                console.log('[mqtt_client.on] conf.running_type is incorrect');
+            }
+        });
 
-            onem2m_mqtt_noti_action(topic.split('/'), jsonObj);
-        }
-    });
+        mqtt_client.on('message', function (topic, message) {
+            if (message[0] == 0xfe || message[0] == 0xfd) {
+                send_to_gcs_from_drone(message);
+            }
+            else if (topic.includes('/oneM2M/req/')) {
+                var jsonObj = JSON.parse(message.toString());
 
-    mqtt_client.on('error', function (err) {
-        console.log(err.message);
-    });
+                if (jsonObj['m2m:rqp'] == null) {
+                    jsonObj['m2m:rqp'] = jsonObj;
+                }
+
+                onem2m_mqtt_noti_action(topic.split('/'), jsonObj);
+            }
+        });
+
+        mqtt_client.on('error', function (err) {
+            console.log(err.message);
+        });
+    }
 }
 
 function parse_sgn(rqi, pc, callback) {
@@ -290,7 +290,7 @@ var tcpCommLink = {};
 //     if (udpClient == null) {
 //         udpClient = udp.createSocket('udp4');
 //
-//         udpClient.on('message', from_gcs);
+//         udpClient.on('message', send_to_drone_from_gcs);
 //     }
 // }
 // else if (conf.commLink == 'tcp') {
@@ -300,7 +300,7 @@ var tcpCommLink = {};
 //
 //         utm_socket[socket.id] = socket;
 //
-//         socket.on('data', from_gcs);
+//         socket.on('data', send_to_drone_from_gcs);
 //
 //         socket.on('end', function () {
 //             console.log('end');
@@ -349,7 +349,7 @@ function createUdpCommLink(sys_id, port) {
         udpCommLink[sys_id].socket = udpSocket;
         udpCommLink[sys_id].port = port;
 
-        udpSocket.on('message', from_gcs);
+        udpSocket.on('message', send_to_drone_from_gcs);
     }
 }
 
@@ -364,7 +364,7 @@ function createTcpCommLink(sys_id, port) {
             tcpCommLink[sys_id].socket = socket;
             tcpCommLink[sys_id].port = port;
 
-            socket.on('data', from_gcs);
+            socket.on('data', send_to_drone_from_gcs);
 
             socket.on('end', function () {
                 console.log('end');
@@ -407,63 +407,64 @@ function createTcpCommLink(sys_id, port) {
     }
 }
 
-function from_gcs(msg) {
-    var content = new Buffer.from(msg, 'ascii').toString('hex');
-    var ver = content.substr(0, 2).toLowerCase();
-    if (ver == 'fd') {
-        var sysid = content.substr(10, 2).toLowerCase();
-        var msgid = content.substr(14, 6).toLowerCase();
+function send_to_drone_from_gcs(msg) {
+    for (var idx in conf.drone) {
+        if (conf.drone.hasOwnProperty(idx)) {
+            if (this.id == conf.drone[idx].system_id) {
+                var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+                mqtt_client.publish(parent, msg);
+            }
+        }
+    }
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = content;
+    var content_hex = new Buffer.from(msg, 'ascii').toString('hex');
+    var ver = content_hex.substr(0, 2).toLowerCase();
+    var sysid = '';
+    var msgid = '';
+
+    if (ver == 'fd') {
+        sysid = content_hex.substr(10, 2).toLowerCase();
+        msgid = content_hex.substr(14, 6).toLowerCase();
+
+        gcs_content[sysid + '-' + msgid + '-' + ver] = content_hex;
     }
     else {
-        sysid = content.substr(6, 2).toLowerCase();
-        msgid = content.substr(10, 2).toLowerCase();
+        sysid = content_hex.substr(6, 2).toLowerCase();
+        msgid = content_hex.substr(10, 2).toLowerCase();
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = content;
+        gcs_content[sysid + '-' + msgid + '-' + ver] = content_hex;
     }
 
     var sys_id = parseInt(sysid, 16);
+    var msg_id = parseInt(msgid, 16);
 
-    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + content);
+    if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
-        console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + content);
-    }
-
-    if(sys_id == conf.gcs_sys_id) {
-        for (var idx in conf.drone) {
-            if (conf.drone.hasOwnProperty(idx)) {
-                if (this.id == conf.drone[idx].system_id) {
-                    var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
-                    mqtt_client.publish(parent, msg);
-                }
-            }
-        }
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + content_hex);
     }
 }
 
 global.hb = {};
-
 global.gpi = {};
 global.rc1_max = {};
 global.rc1_min = {};
@@ -493,26 +494,24 @@ function resetGpiValue(sys_id) {
     gpi[sys_id].vy = 0;
 }
 
-function send_to_gcs(content_each) {
+function send_to_gcs_from_drone(content_each) {
     // if (Object.keys(utm_socket).length > 0 || udpClient != null) {
     var content_each_hex = content_each.toString('hex');
     var ver = content_each_hex.substr(0, 2);
+    var sysid = '';
+    var msgid = '';
+
     if (ver == 'fd') {
-        var sysid = content_each_hex.substr(10, 2).toLowerCase();
-        var msgid = content_each_hex.substr(14, 6).toLowerCase();
+        sysid = content_each_hex.substr(10, 2).toLowerCase();
+        msgid = content_each_hex.substr(14, 6).toLowerCase();
     }
     else {
         sysid = content_each_hex.substr(6, 2).toLowerCase();
         msgid = content_each_hex.substr(10, 2).toLowerCase();
     }
 
-    // for (var idx in utm_socket) {
-    //     if (utm_socket.hasOwnProperty(idx)) {
-    //         utm_socket[idx].write(content_each);
-    //     }
-    // }
-
     var sys_id = parseInt(sysid, 16);
+    var msg_id = parseInt(msgid, 16);
 
     if(conf.commLink === 'udp') {
         if(udpCommLink.hasOwnProperty(sys_id)) {
@@ -530,18 +529,7 @@ function send_to_gcs(content_each) {
         }
     }
 
-
-    // if (udpClient != null) {
-    //     udpClient.send(content_each, 14550, 'localhost', function (error) {
-    //         if (error) {
-    //             udpClient.close();
-    //             console.log('udpClient socket is closed');
-    //         }
-    //     });
-    // }
-
-
-    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
+    if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
         if (ver == 'fd') {
             var base_offset = 20;
             var custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
@@ -572,7 +560,6 @@ function send_to_gcs(content_each) {
         }
 
         //console.log(content_each);
-        sys_id = parseInt(sysid, 16).toString();
         if (!hb.hasOwnProperty(sys_id)) {
             hb[sys_id] = {};
         }
@@ -593,7 +580,7 @@ function send_to_gcs(content_each) {
         }
     }
 
-    else if (msgid == '21') { // #33 - global_position_int
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
         if (ver == 'fd') {
             base_offset = 20;
             var time_boot_ms = content_each_hex.substr(base_offset, 8).toLowerCase();
@@ -627,7 +614,6 @@ function send_to_gcs(content_each) {
             vy = content_each_hex.substr(base_offset, 4).toLowerCase();
         }
 
-        sys_id = parseInt(sysid, 16).toString();
         if (!gpi.hasOwnProperty(sys_id)) {
             gpi[sys_id] = {};
         }
@@ -642,14 +628,12 @@ function send_to_gcs(content_each) {
 
         if(resetGpiTimer.hasOwnProperty(sys_id)) {
             clearTimeout(resetGpiTimer[sys_id]);
-            resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
         }
-        else {
-            resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
-        }
+
+        resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
     }
 
-    else if (msgid == '16') { // #22 PARAM_VALUE
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_PARAM_VALUE) {
         if (ver == 'fd') {
             base_offset = 20;
             var param_value = content_each_hex.substr(base_offset, 8).toLowerCase();
@@ -675,10 +659,7 @@ function send_to_gcs(content_each) {
             param_type = content_each_hex.substr(base_offset, 2).toLowerCase();
         }
 
-        sys_id = parseInt(sysid, 16).toString();
-
-        var buf = Buffer.from(param_id, "hex");
-        param_id = buf.toString('ASCII');
+        param_id = Buffer.from(param_id, "hex").toString('ASCII');
 
         if (param_id.includes('RC1_MIN')) {
             //console.log(param_id);
@@ -814,12 +795,11 @@ function send_to_gcs(content_each) {
         }
     }
 
-    if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_each_hex);
+    if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_each_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) { // #33 - global_position_int
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_each_hex);
-
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_each_hex);
         if (ver == 'fd') {
             base_offset = 20;
             var mission_sequence = content_each_hex.substr(base_offset, 4).toLowerCase();
@@ -848,15 +828,14 @@ function send_to_gcs(content_each) {
             mission_request[sys_id].seq = mission_result;
         }
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) { // #33 - global_position_int
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_each_hex);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_each_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_each_hex);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_each_hex);
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_each_hex);
-
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_each_hex);
         if (ver == 'fd') {
             base_offset = 20;
             target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
@@ -885,10 +864,9 @@ function send_to_gcs(content_each) {
             result_mission_ack[sys_id].type = mission_result;
         }
     }
-    else if (parseInt(msgid, 16) == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) { // #33 - global_position_int
-        console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_each_hex);
+    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_each_hex);
     }
-
 
     // if(sysid == '37' ) {
     //     console.log('55 - ' + content_each);
