@@ -421,11 +421,16 @@ function actionAllGotoCircle(input) {
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
+            setTimeout(send_circle_radius_param_set_command, 10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], radius);
+
+            var degree_speed = (speed / radius) * (180 / 3.14);
+            setTimeout(send_circle_rate_param_set_command, 20, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], degree_speed);
+
             // set GUIDED Mode
             var custom_mode = 4;
             var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-            setTimeout(send_set_mode_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+            setTimeout(send_set_mode_command, 30 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
             var arr_cur_goto_position = cur_goto_position.split(':');
             var lat = parseFloat(arr_cur_goto_position[0]);
@@ -461,7 +466,7 @@ function allGotoMenu() {
                     if (goto_all_position[i] == undefined) {
                         goto_all_position[i] = '';
                     }
-                    goto_all_position[i] += (conf.drone[idx].goto_position[i] + '|');
+                    goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
 
                 }
             }
@@ -571,8 +576,7 @@ function allGotoCircleMenu() {
                     if (goto_all_position[i] == undefined) {
                         goto_all_position[i] = '';
                     }
-                    goto_all_position[i] += (conf.drone[idx].goto_position[i] + '|');
-
+                    goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
                 }
             }
         }
@@ -601,6 +605,8 @@ function allGotoCircleMenu() {
 
             column_count = 3;
             actionAllGotoCircle(input);
+
+            setTimeout(allMenu, 4000);
         }
     });
 }
@@ -1066,7 +1072,7 @@ function allAutoGotoMenu() {
                     if (goto_all_position[i] == undefined) {
                         goto_all_position[i] = '';
                     }
-                    goto_all_position[i] += (conf.drone[idx].goto_position[i] + '|');
+                    goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
 
                 }
             }
@@ -2636,15 +2642,12 @@ function result_mission_item_complete(target_name, pub_topic, target_sys_id, lat
         var base_mode = hb[target_system_id[target_name]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
         setTimeout(send_set_mode_command, 100, target_name, target_pub_topic[target_name], target_system_id[target_name], base_mode, custom_mode);
-
-        setTimeout(allMenu, 1000);
     }
     else {
         result_check_count++;
         if(result_check_count > 10) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
-            setTimeout(allMenu, 1000);
         }
         else {
             setTimeout(result_mission_item_complete, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
@@ -2663,7 +2666,6 @@ function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude
         if(result_check_count > 10) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
-            setTimeout(allMenu, 1000);
         }
         else {
             setTimeout(result_mission_protocol, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
@@ -2784,7 +2786,6 @@ function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitud
         if(result_check_count > 10) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Clear Error at %s', target_name);
-            setTimeout(allMenu, 1000);
         }
         else {
             setTimeout(result_mission_clear_all, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
@@ -2793,11 +2794,6 @@ function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitud
 }
 
 function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius) {
-    setTimeout(send_circle_radius_param_set_command, 30, target_name, target_pub_topic[target_name], target_system_id[target_name], radius);
-
-    var degree_speed = (speed / radius) * (180 / 3.14);
-    setTimeout(send_circle_rate_param_set_command, 40, target_name, target_pub_topic[target_name], target_system_id[target_name], degree_speed);
-
     var btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
