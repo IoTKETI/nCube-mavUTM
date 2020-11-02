@@ -2634,6 +2634,8 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     }
 }
 
+const MISSION_ACK_TIMEOUT_COUNT = 20;
+
 function result_mission_item_complete(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius) {
     if(result_mission_ack[target_sys_id].type == 0) {
         term.moveTo.blue(1, conf.drone.length + column_count++, 'Mission Upload Complete to %s', target_name);
@@ -2645,11 +2647,12 @@ function result_mission_item_complete(target_name, pub_topic, target_sys_id, lat
     }
     else {
         result_check_count++;
-        if(result_check_count > 10) {
+        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
         }
         else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_item_complete', target_name);
             setTimeout(result_mission_item_complete, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
         }
     }
@@ -2663,11 +2666,12 @@ function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude
     }
     else {
         result_check_count++;
-        if(result_check_count > 10) {
+        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
         }
         else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_protocol', target_name);
             setTimeout(result_mission_protocol, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
         }
     }
@@ -2783,11 +2787,12 @@ function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitud
     }
     else {
         result_check_count++;
-        if(result_check_count > 10) {
+        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             result_check_count = 0;
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Clear Error at %s', target_name);
         }
         else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_clear_all', target_name);
             setTimeout(result_mission_clear_all, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
         }
     }
