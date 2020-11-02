@@ -421,9 +421,16 @@ function actionAllGotoCircle(input) {
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
+            var arr_cur_goto_position = cur_goto_position.split(':');
+            var lat = parseFloat(arr_cur_goto_position[0]);
+            var lon = parseFloat(arr_cur_goto_position[1]);
+            var alt = parseFloat(arr_cur_goto_position[2]);
+            var speed = parseFloat(arr_cur_goto_position[3]);
+            var radius = parseFloat(arr_cur_goto_position[4]);
+
             setTimeout(send_circle_radius_param_set_command, 10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], radius);
 
-            var degree_speed = (speed / radius) * (180 / 3.14);
+            var degree_speed = parseInt((speed / radius) * (180 / 3.14), 10);
             setTimeout(send_circle_rate_param_set_command, 20, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], degree_speed);
 
             // set GUIDED Mode
@@ -431,13 +438,6 @@ function actionAllGotoCircle(input) {
             var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, 30 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
-
-            var arr_cur_goto_position = cur_goto_position.split(':');
-            var lat = parseFloat(arr_cur_goto_position[0]);
-            var lon = parseFloat(arr_cur_goto_position[1]);
-            var alt = parseFloat(arr_cur_goto_position[2]);
-            var speed = parseFloat(arr_cur_goto_position[3]);
-            var radius = parseFloat(arr_cur_goto_position[4]);
 
             setTimeout(send_goto_circle_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], lat, lon, alt, speed, radius);
         }
@@ -3228,7 +3228,7 @@ function send_circle_radius_param_set_command(target_name, pub_topic, target_sys
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "CIRCLE_RADIUS";
-    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_UINT32;
     btn_params.param_value = target_radius * 100; // cm / s.
 
     try {
@@ -3251,7 +3251,7 @@ function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_i
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "CIRCLE_RATE";
-    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_INT16;
     btn_params.param_value = target_rate; // v = rw -> w = v / r.
 
     try {
@@ -3260,7 +3260,7 @@ function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_i
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set CIRCLE_RATE command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, target_rate + ' Send set CIRCLE_RATE command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
