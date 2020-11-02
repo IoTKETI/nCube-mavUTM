@@ -2652,7 +2652,7 @@ function result_mission_item_complete(target_name, pub_topic, target_sys_id, lat
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_item_complete', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count, result_check_count + ' - result_mission_item_complete', target_name);
             setTimeout(result_mission_item_complete, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude);
         }
     }
@@ -2671,7 +2671,7 @@ function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Upload Error at %s', target_name);
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_protocol', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count, result_check_count + ' - result_mission_protocol', target_name);
             setTimeout(result_mission_protocol, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
         }
     }
@@ -2792,7 +2792,7 @@ function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitud
             term.moveTo.red(1, conf.drone.length + column_count++, 'Mission Clear Error at %s', target_name);
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, result_check_count + ' - result_mission_clear_all', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count, result_check_count + ' - result_mission_clear_all', target_name);
             setTimeout(result_mission_clear_all, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
         }
     }
