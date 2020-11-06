@@ -365,14 +365,14 @@ function allTakeoffMenu() {
                         var custom_mode = 4;
                         var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                        setTimeout(send_set_mode_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+                        setTimeout(send_set_mode_command, 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-                        setTimeout(send_arm_command, back_menu_delay * 20 + back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
+                        setTimeout(send_arm_command, 500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
 
-                        setTimeout(send_takeoff_command, back_menu_delay * 75 + back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], alt);
+                        setTimeout(send_takeoff_command, 6500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], alt);
                     }
                 }
-                setTimeout(allMenu, back_menu_delay * 100 + back_menu_delay * (cur_drone_list_selected.length + 1));
+                setTimeout(allMenu, 7500 + 50 * (command_delay +1));
             }
         }
     );
