@@ -70,10 +70,10 @@ function mqtt_connect(serverip) {
                         console.log('subscribe - ' + noti_topic);
 
                         if (conf.commLink === 'udp') {
-                            createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10));
+                            createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10), noti_topic);
                         }
                         else if (conf.commLink === 'tcp') {
-                            createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10));
+                            createTcpCommLink(conf.drone[idx].system_id, 9000 + parseInt(conf.drone[idx].system_id, 10), noti_topic);
                         }
                     }
                 }
@@ -88,7 +88,7 @@ function mqtt_connect(serverip) {
 
         mqtt_client.on('message', function (topic, message) {
             if (message[0] == 0xfe || message[0] == 0xfd) {
-                send_to_gcs_from_drone(message);
+                send_to_gcs_from_drone(topic, message);
             }
             else if (topic.includes('/oneM2M/req/')) {
                 var jsonObj = JSON.parse(message.toString());
@@ -339,30 +339,42 @@ var tcpCommLink = {};
 //     }
 // }
 
-function createUdpCommLink(sys_id, port) {
+function createUdpCommLink(sys_id, port, topic) {
     if(!tcpCommLink.hasOwnProperty(sys_id)) {
         var udpSocket = udp.createSocket('udp4');
 
         udpSocket.id = sys_id;
+        udpSocket.topic = topic;
 
         udpCommLink[sys_id] = {};
         udpCommLink[sys_id].socket = udpSocket;
         udpCommLink[sys_id].port = port;
 
+        udpCommLink[topic] = {};
+        udpCommLink[topic].socket = udpSocket;
+        udpCommLink[topic].port = port;
+
+        console.log('UDP socket created on port ' + port + ' [' + sys_id + ']-[' + topic + ']');
+
         udpSocket.on('message', send_to_drone_from_gcs);
     }
 }
 
-function createTcpCommLink(sys_id, port) {
+function createTcpCommLink(sys_id, port, topic) {
     if(!tcpCommLink.hasOwnProperty(sys_id)) {
         var _server = net.createServer(function (socket) {
-            console.log('socket connected [' + sys_id + ']');
+            console.log('TCP socket connected [' + sys_id + '] - [' + topic + ']');
 
             socket.id = sys_id;
+            socket.topic = topic;
 
             tcpCommLink[sys_id] = {};
             tcpCommLink[sys_id].socket = socket;
             tcpCommLink[sys_id].port = port;
+
+            tcpCommLink[topic] = {};
+            tcpCommLink[topic].socket = socket;
+            tcpCommLink[topic].port = port;
 
             socket.on('data', send_to_drone_from_gcs);
 
@@ -372,6 +384,10 @@ function createTcpCommLink(sys_id, port) {
                 if (tcpCommLink.hasOwnProperty(this.id)) {
                     delete tcpCommLink[this.id];
                 }
+
+                if (tcpCommLink.hasOwnProperty(this.topic)) {
+                    delete tcpCommLink[this.topic];
+                }
             });
 
             socket.on('close', function () {
@@ -380,6 +396,10 @@ function createTcpCommLink(sys_id, port) {
                 if (tcpCommLink.hasOwnProperty(this.id)) {
                     delete tcpCommLink[this.id];
                 }
+
+                if (tcpCommLink.hasOwnProperty(this.topic)) {
+                    delete tcpCommLink[this.topic];
+                }
             });
 
             socket.on('error', function (e) {
@@ -387,6 +407,10 @@ function createTcpCommLink(sys_id, port) {
 
                 if (tcpCommLink.hasOwnProperty(this.id)) {
                     delete tcpCommLink[this.id];
+                }
+
+                if (tcpCommLink.hasOwnProperty(this.topic)) {
+                    delete tcpCommLink[this.topic];
                 }
             });
         });
@@ -407,6 +431,56 @@ function createTcpCommLink(sys_id, port) {
     }
 }
 
+const byteToHex = [];
+
+for (let n = 0; n <= 0xff; ++n) {
+    const hexOctet = n.toString(16).padStart(2, "0");
+    byteToHex.push(hexOctet);
+}
+
+function hex(arrayBuffer) {
+    const buff = new Uint8Array(arrayBuffer);
+    const hexOctets = []; // new Array(buff.length) is even faster (preallocates necessary array size), then use hexOctets[i] instead of .push()
+
+    for (let i = 0; i < buff.length; ++i) {
+        hexOctets.push(byteToHex[buff[i]]);
+    }
+
+    return hexOctets.join("");
+}
+
+var mavStrFromGcs = '';
+var mavStrFromDrone = {};
+
+function extractMav(msg, mavStr, fnParse) {
+    mavStr += hex(msg);
+    while(mavStr.length > 12) {
+        var stx = mavStr.substr(0, 2);
+        if(stx === 'fe' || stx === 'fd') {
+            if (stx === 'fe') {
+                var len = parseInt(mavStr.substr(2, 2), 16);
+                var mavLength = (6 * 2) + (len * 2) + (2 * 2);
+            }
+            else { // if (stx === 'fd') {
+                len = parseInt(mavStr.substr(2, 2), 16);
+                mavLength = (10 * 2) + (len * 2) + (2 * 2);
+            }
+
+            if (mavStr.length >= mavLength) {
+                var mavPacket = mavStr.substr(0, mavLength);
+                mavStr = mavStr.slice(mavLength);
+                setTimeout(fnParse, 0, mavPacket);
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            mavStr = mavStr.slice(2);
+        }
+    }
+}
+
 function send_to_drone_from_gcs(msg) {
     for (var idx in conf.drone) {
         if (conf.drone.hasOwnProperty(idx)) {
@@ -417,50 +491,53 @@ function send_to_drone_from_gcs(msg) {
         }
     }
 
-    var content_hex = new Buffer.from(msg, 'ascii').toString('hex');
-    var ver = content_hex.substr(0, 2).toLowerCase();
+    extractMav(msg, mavStrFromGcs, parseMavFromGcs);
+}
+
+function parseMavFromGcs(mavPacket) {
+    var ver = mavPacket.substr(0, 2).toLowerCase();
     var sysid = '';
     var msgid = '';
 
     if (ver == 'fd') {
-        sysid = content_hex.substr(10, 2).toLowerCase();
-        msgid = content_hex.substr(14, 6).toLowerCase();
+        sysid = mavPacket.substr(10, 2).toLowerCase();
+        msgid = mavPacket.substr(14, 6).toLowerCase();
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = content_hex;
+        gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
     }
     else {
-        sysid = content_hex.substr(6, 2).toLowerCase();
-        msgid = content_hex.substr(10, 2).toLowerCase();
+        sysid = mavPacket.substr(6, 2).toLowerCase();
+        msgid = mavPacket.substr(10, 2).toLowerCase();
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = content_hex;
+        gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
     }
 
     var sys_id = parseInt(sysid, 16);
     var msg_id = parseInt(msgid, 16);
 
     if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + content_hex);
+        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + mavPacket);
     }
 }
 
@@ -494,69 +571,75 @@ function resetGpiValue(sys_id) {
     gpi[sys_id].vy = 0;
 }
 
-function send_to_gcs_from_drone(content_each) {
-    // if (Object.keys(utm_socket).length > 0 || udpClient != null) {
-    var content_each_hex = content_each.toString('hex');
-    var ver = content_each_hex.substr(0, 2);
-    var sysid = '';
-    var msgid = '';
-
-    if (ver == 'fd') {
-        sysid = content_each_hex.substr(10, 2).toLowerCase();
-        msgid = content_each_hex.substr(14, 6).toLowerCase();
-    }
-    else {
-        sysid = content_each_hex.substr(6, 2).toLowerCase();
-        msgid = content_each_hex.substr(10, 2).toLowerCase();
-    }
-
-    var sys_id = parseInt(sysid, 16);
-    var msg_id = parseInt(msgid, 16);
-
+function send_to_gcs_from_drone(topic, content_each) {
     if(conf.commLink === 'udp') {
-        if(udpCommLink.hasOwnProperty(sys_id)) {
-            udpCommLink[sys_id].socket.send(content_each, udpCommLink[sys_id].port, 'localhost', function (error) {
+        if(udpCommLink.hasOwnProperty(topic)) {
+            udpCommLink[topic].socket.send(content_each, udpCommLink[topic].port, 'localhost', function (error) {
                 if (error) {
-                    udpCommLink[sys_id].socket.close();
-                    console.log('udpCommLink[' + sys_id + '].socket is closed');
+                    udpCommLink[topic].socket.close();
+                    console.log('udpCommLink[' + topic + '].socket is closed');
                 }
             });
         }
     }
     else if(conf.commLink === 'tcp') {
-        if(tcpCommLink.hasOwnProperty(sys_id)) {
-            tcpCommLink[sys_id].socket.write(content_each);
+        if(tcpCommLink.hasOwnProperty(topic)) {
+            tcpCommLink[topic].socket.write(content_each);
         }
     }
+
+    if(!mavStrFromDrone.hasOwnProperty(topic)) {
+        mavStrFromDrone[topic] = '';
+    }
+
+    extractMav(content_each, mavStrFromDrone[topic], parseMavFromDrone);
+}
+
+function parseMavFromDrone(mavPacket) {
+    var ver = mavPacket.substr(0, 2);
+    var sysid = '';
+    var msgid = '';
+
+    if (ver == 'fd') {
+        sysid = mavPacket.substr(10, 2).toLowerCase();
+        msgid = mavPacket.substr(14, 6).toLowerCase();
+    }
+    else {
+        sysid = mavPacket.substr(6, 2).toLowerCase();
+        msgid = mavPacket.substr(10, 2).toLowerCase();
+    }
+
+    var sys_id = parseInt(sysid, 16);
+    var msg_id = parseInt(msgid, 16);
 
     if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
         if (ver == 'fd') {
             var base_offset = 20;
-            var custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var type = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var autopilot = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var base_mode = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var system_status = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var system_status = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var mavlink_version = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            custom_mode = content_each_hex.substr(base_offset, 8).toLowerCase();
+            custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            type = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            autopilot = content_each_hex.substr(base_offset, 2).toLowerCase();
+            autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            base_mode = content_each_hex.substr(base_offset, 2).toLowerCase();
+            base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            system_status = content_each_hex.substr(base_offset, 2).toLowerCase();
+            system_status = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mavlink_version = content_each_hex.substr(base_offset, 2).toLowerCase();
+            mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
         }
 
         //console.log(content_each);
@@ -583,35 +666,35 @@ function send_to_gcs_from_drone(content_each) {
     else if (msg_id == mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
         if (ver == 'fd') {
             base_offset = 20;
-            var time_boot_ms = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var lat = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var lat = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var lon = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var lon = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var alt = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var alt = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var relative_alt = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var vx = content_each_hex.substr(base_offset, 4).toLowerCase();
+            var vx = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var vy = content_each_hex.substr(base_offset, 4).toLowerCase();
+            var vy = mavPacket.substr(base_offset, 4).toLowerCase();
         }
         else {
             base_offset = 12;
-            time_boot_ms = content_each_hex.substr(base_offset, 8).toLowerCase();
+            time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            lat = content_each_hex.substr(base_offset, 8).toLowerCase();
+            lat = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            lon = content_each_hex.substr(base_offset, 8).toLowerCase();
+            lon = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            alt = content_each_hex.substr(base_offset, 8).toLowerCase();
+            alt = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            relative_alt = content_each_hex.substr(base_offset, 8).toLowerCase();
+            relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            vx = content_each_hex.substr(base_offset, 4).toLowerCase();
+            vx = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            vy = content_each_hex.substr(base_offset, 4).toLowerCase();
+            vy = mavPacket.substr(base_offset, 4).toLowerCase();
         }
 
         if (!gpi.hasOwnProperty(sys_id)) {
@@ -636,27 +719,27 @@ function send_to_gcs_from_drone(content_each) {
     else if (msg_id == mavlink.MAVLINK_MSG_ID_PARAM_VALUE) {
         if (ver == 'fd') {
             base_offset = 20;
-            var param_value = content_each_hex.substr(base_offset, 8).toLowerCase();
+            var param_value = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            var param_count = content_each_hex.substr(base_offset, 4).toLowerCase();
+            var param_count = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var param_index = content_each_hex.substr(base_offset, 4).toLowerCase();
+            var param_index = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var param_id = content_each_hex.substr(base_offset, 32).toLowerCase();
+            var param_id = mavPacket.substr(base_offset, 32).toLowerCase();
             base_offset += 32;
-            var param_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var param_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            param_value = content_each_hex.substr(base_offset, 8).toLowerCase();
+            param_value = mavPacket.substr(base_offset, 8).toLowerCase();
             base_offset += 8;
-            param_count = content_each_hex.substr(base_offset, 4).toLowerCase();
+            param_count = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            param_index = content_each_hex.substr(base_offset, 4).toLowerCase();
+            param_index = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            param_id = content_each_hex.substr(base_offset, 32).toLowerCase();
+            param_id = mavPacket.substr(base_offset, 32).toLowerCase();
             base_offset += 32;
-            param_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            param_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
 
         param_id = Buffer.from(param_id, "hex").toString('ASCII');
@@ -796,29 +879,29 @@ function send_to_gcs_from_drone(content_each) {
     }
 
     if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
         if (ver == 'fd') {
             base_offset = 20;
-            var mission_sequence = content_each_hex.substr(base_offset, 4).toLowerCase();
+            var mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            var target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var target_system = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var target_component = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            mission_sequence = content_each_hex.substr(base_offset, 4).toLowerCase();
+            mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
             base_offset += 4;
-            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
 
         if(mission_request.hasOwnProperty(sys_id)) {
@@ -829,32 +912,32 @@ function send_to_gcs_from_drone(content_each) {
         }
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
         if (ver == 'fd') {
             base_offset = 20;
-            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            var mission_result_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            var mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
         else {
             base_offset = 12;
-            target_system = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            target_component = content_each_hex.substr(base_offset, 2).toLowerCase();
+            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mission_result_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
             base_offset += 2;
-            mission_type = content_each_hex.substr(base_offset, 2).toLowerCase();
+            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
         }
 
         if(result_mission_ack.hasOwnProperty(sys_id)) {
@@ -865,46 +948,8 @@ function send_to_gcs_from_drone(content_each) {
         }
     }
     else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + content_each_hex);
+        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
     }
-
-    // if(sysid == '37' ) {
-    //     console.log('55 - ' + content_each);
-    // }
-    // else if(sysid == '0a' ) {
-    //     console.log('10 - ' + content_each);
-    // }
-    // else if(sysid == '21' ) {
-    //     console.log('33 - ' + content_each);
-    // }
-    // else if(sysid == 'ff' ) {
-    //     console.log('255 - ' + content_each);
-    // }
-
-    // if (msgid == '2c') {
-    //     console.log('2c MISSION_COUNT - ' + content_each);
-    // }
-    //
-    // else if (msgid == '28') {
-    //     console.log('28 MISSION_REQ - ' + content_each);
-    // }
-    //
-    // else if (msgid == '2f') {
-    //     console.log('2f MISSION_ACK - ' + content_each);
-    // }
-    //
-    // else if (msgid == '33') {
-    //     console.log('33 MISSION_REQ_INT - ' + content_each);
-    // }
-    //
-    // else if (msgid == '49') {
-    //     console.log('49 MISSION_ITEM_INT - ' + content_each);
-    // }
-
-    // else if (msgid == '00') {
-    //     console.log('2c MISSION_COUNT - ' + content_each);
-    // }
-    // }
 }
 
 function rtvct(target, aei, count, callback) {
