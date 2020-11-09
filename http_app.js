@@ -494,7 +494,33 @@ function send_to_drone_from_gcs(msg) {
         }
     }
 
-    extractMav(msg, mavStrFromGcs, parseMavFromGcs);
+    mavStrFromGcs += hex(msg);
+
+    while(mavStrFromGcs.length > 12) {
+        var stx = mavStrFromGcs.substr(0, 2);
+        if(stx === 'fe') {
+            if (stx === 'fe') {
+                var len = parseInt(mavStrFromGcs.substr(2, 2), 16);
+                var mavLength = (6 * 2) + (len * 2) + (2 * 2);
+            }
+            else { // if (stx === 'fd') {
+                len = parseInt(mavStrFromGcs.substr(2, 2), 16);
+                mavLength = (10 * 2) + (len * 2) + (2 * 2);
+            }
+
+            if (mavStrFromGcs.length >= mavLength) {
+                var mavPacket = mavStrFromGcs.substr(0, mavLength);
+                mavStrFromGcs = mavStrFromGcs.substr(mavLength);
+                setTimeout(parseMavFromGcs, 0, mavPacket);
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            mavStrFromGcs = mavStrFromGcs.substr(2);
+        }
+    }
 }
 
 function parseMavFromGcs(mavPacket) {
@@ -598,7 +624,33 @@ function send_to_gcs_from_drone(topic, content_each) {
         mavStrFromDrone[topic] = '';
     }
 
-    extractMav(content_each, mavStrFromDrone[topic], parseMavFromDrone);
+    mavStrFromDrone[topic] += hex(content_each);
+
+    while(mavStrFromDrone[topic].length > 12) {
+        var stx = mavStrFromDrone[topic].substr(0, 2);
+        if(stx === 'fe') {
+            if (stx === 'fe') {
+                var len = parseInt(mavStrFromDrone[topic].substr(2, 2), 16);
+                var mavLength = (6 * 2) + (len * 2) + (2 * 2);
+            }
+            else { // if (stx === 'fd') {
+                len = parseInt(mavStrFromDrone[topic].substr(2, 2), 16);
+                mavLength = (10 * 2) + (len * 2) + (2 * 2);
+            }
+
+            if (mavStrFromDrone[topic].length >= mavLength) {
+                var mavPacket = mavStrFromDrone[topic].substr(0, mavLength);
+                mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(mavLength);
+                setTimeout(parseMavFromDrone, 0, mavPacket);
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(2);
+        }
+    }
 }
 
 function parseMavFromDrone(mavPacket) {
