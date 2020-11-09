@@ -70,6 +70,9 @@ function mqtt_connect(serverip) {
                         console.log('subscribe - ' + noti_topic);
 
                         if (conf.commLink === 'udp') {
+                            var arr_topic = noti_topic.split('/');
+                            arr_topic.pop();
+                            noti_topic = arr_topic.join('/');
                             createUdpCommLink(conf.drone[idx].system_id, 10000 + parseInt(conf.drone[idx].system_id, 10), noti_topic);
                         }
                         else if (conf.commLink === 'tcp') {
@@ -572,6 +575,9 @@ function resetGpiValue(sys_id) {
 }
 
 function send_to_gcs_from_drone(topic, content_each) {
+    var arr_topic = topic.split('/');
+    arr_topic.pop();
+    topic = arr_topic.join('/');
     if(conf.commLink === 'udp') {
         if(udpCommLink.hasOwnProperty(topic)) {
             udpCommLink[topic].socket.send(content_each, udpCommLink[topic].port, 'localhost', function (error) {
