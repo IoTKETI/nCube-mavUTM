@@ -3397,13 +3397,14 @@ setInterval(function () {
                     var tar_alt = parseFloat(arr_cur_goto_position[2]);
                     var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
-                    goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
+                    goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2)).toFixed(2);
                 }
                 else {
-                    goto_dist = 0;
+                    goto_dist = (0.00).toFixed(2);
                 }
 
-                term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s] %s:%s:%s:%s [%s] [%s] [%s]", drone_selected, cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
+                term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s]", drone_selected);
+                term.moveTo.magenta(32, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
             }
         }
     }

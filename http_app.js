@@ -453,7 +453,10 @@ function hex(arrayBuffer) {
 }
 
 var mavStrFromGcs = '';
+var mavStrFromGcsLength = 0;
 var mavStrFromDrone = {};
+var mavStrFromDroneLength = {};
+
 
 function extractMav(msg, mavStr, fnParse) {
     mavStr += hex(msg);
@@ -494,6 +497,11 @@ function send_to_drone_from_gcs(msg) {
         }
     }
 
+    if(mavStrFromGcsLength > 0) {
+        mavStrFromGcs = mavStrFromGcs.substr(mavStrFromGcsLength);
+        mavStrFromGcsLength = 0;
+    }
+
     mavStrFromGcs += hex(msg);
     while(mavStrFromGcs.length > 12) {
         var stx = mavStrFromGcs.substr(0, 2);
@@ -507,9 +515,10 @@ function send_to_drone_from_gcs(msg) {
                 mavLength = (10 * 2) + (len * 2) + (2 * 2);
             }
 
-            if (mavStrFromGcs.length >= mavLength) {
+            if ((mavStrFromGcs.length - mavStrFromGcsLength) >= mavLength) {
+                mavStrFromGcsLength += mavLength;
                 var mavPacket = mavStrFromGcs.substr(0, mavLength);
-                mavStrFromGcs = mavStrFromGcs.substr(mavLength);
+                // mavStrFromGcs = mavStrFromGcs.substr(mavLength);
                 setTimeout(parseMavFromGcs, 0, mavPacket);
             }
             else {
@@ -523,49 +532,54 @@ function send_to_drone_from_gcs(msg) {
 }
 
 function parseMavFromGcs(mavPacket) {
-    var ver = mavPacket.substr(0, 2).toLowerCase();
-    var sysid = '';
-    var msgid = '';
+    try {
+        var ver = mavPacket.substr(0, 2).toLowerCase();
+        var sysid = '';
+        var msgid = '';
 
-    if (ver == 'fd') {
-        sysid = mavPacket.substr(10, 2).toLowerCase();
-        msgid = mavPacket.substr(14, 6).toLowerCase();
+        if (ver == 'fd') {
+            sysid = mavPacket.substr(10, 2).toLowerCase();
+            msgid = mavPacket.substr(14, 6).toLowerCase();
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
-    }
-    else {
-        sysid = mavPacket.substr(6, 2).toLowerCase();
-        msgid = mavPacket.substr(10, 2).toLowerCase();
+            gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
+        }
+        else {
+            sysid = mavPacket.substr(6, 2).toLowerCase();
+            msgid = mavPacket.substr(10, 2).toLowerCase();
 
-        gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
-    }
+            gcs_content[sysid + '-' + msgid + '-' + ver] = mavPacket;
+        }
 
-    var sys_id = parseInt(sysid, 16);
-    var msg_id = parseInt(msgid, 16);
+        var sys_id = parseInt(sysid, 16);
+        var msg_id = parseInt(msgid, 16);
 
-    if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + mavPacket);
+        if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_HEARTBEAT - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
+            // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + mavPacket);
+        }
     }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL) {
-        // console.log('<--- ' + 'MAVLINK_MSG_ID_MISSION_CLEAR_ALL - ' + mavPacket);
+    catch (e) {
+        console.log(e.message);
     }
 }
 
@@ -623,6 +637,15 @@ function send_to_gcs_from_drone(topic, content_each) {
         mavStrFromDrone[topic] = '';
     }
 
+    if(!mavStrFromDroneLength.hasOwnProperty(topic)) {
+        mavStrFromDroneLength[topic] = 0;
+    }
+
+    if(mavStrFromDroneLength[topic] > 0) {
+        mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(mavStrFromDroneLength[topic]);
+        mavStrFromDroneLength[topic] = 0;
+    }
+
     mavStrFromDrone[topic] += hex(content_each);
     while(mavStrFromDrone[topic].length > 12) {
         var stx = mavStrFromDrone[topic].substr(0, 2);
@@ -636,9 +659,10 @@ function send_to_gcs_from_drone(topic, content_each) {
                 mavLength = (10 * 2) + (len * 2) + (2 * 2);
             }
 
-            if (mavStrFromDrone[topic].length >= mavLength) {
+            if ((mavStrFromDrone[topic].length - mavStrFromDroneLength[topic]) >= mavLength) {
+                mavStrFromDroneLength[topic] += mavLength;
                 var mavPacket = mavStrFromDrone[topic].substr(0, mavLength);
-                mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(mavLength);
+                // mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(mavLength);
                 setTimeout(parseMavFromDrone, 0, mavPacket);
             }
             else {
@@ -647,364 +671,370 @@ function send_to_gcs_from_drone(topic, content_each) {
         }
         else {
             mavStrFromDrone[topic] = mavStrFromDrone[topic].substr(2);
+            console.log(mavStrFromDrone[topic]);
         }
     }
 }
 
 function parseMavFromDrone(mavPacket) {
-    var ver = mavPacket.substr(0, 2);
-    var sysid = '';
-    var msgid = '';
+    try {
+        var ver = mavPacket.substr(0, 2);
+        var sysid = '';
+        var msgid = '';
 
-    if (ver == 'fd') {
-        sysid = mavPacket.substr(10, 2).toLowerCase();
-        msgid = mavPacket.substr(14, 6).toLowerCase();
-    }
-    else {
-        sysid = mavPacket.substr(6, 2).toLowerCase();
-        msgid = mavPacket.substr(10, 2).toLowerCase();
-    }
-
-    var sys_id = parseInt(sysid, 16);
-    var msg_id = parseInt(msgid, 16);
-
-    if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
         if (ver == 'fd') {
-            var base_offset = 20;
-            var custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var type = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var system_status = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
+            sysid = mavPacket.substr(10, 2).toLowerCase();
+            msgid = mavPacket.substr(14, 6).toLowerCase();
         }
         else {
-            base_offset = 12;
-            custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            type = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            system_status = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
+            sysid = mavPacket.substr(6, 2).toLowerCase();
+            msgid = mavPacket.substr(10, 2).toLowerCase();
         }
 
-        //console.log(content_each);
-        if (!hb.hasOwnProperty(sys_id)) {
-            hb[sys_id] = {};
-        }
-        hb[sys_id].type = Buffer.from(type, 'hex').readUInt8(0);
-        hb[sys_id].autopilot = Buffer.from(autopilot, 'hex').readUInt8(0);
-        hb[sys_id].base_mode = Buffer.from(base_mode, 'hex').readUInt8(0);
-        hb[sys_id].custom_mode = Buffer.from(custom_mode, 'hex').readUInt32LE(0);
-        hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
-        hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
+        var sys_id = parseInt(sysid, 16);
+        var msg_id = parseInt(msgid, 16);
 
-        if (rc3_trim.hasOwnProperty(sys_id) && rc3_max.hasOwnProperty(sys_id) && rc3_min.hasOwnProperty(sys_id)) {
-            if (hb[sys_id].custom_mode == 0) {
-                rc3_trim[sys_id].param_value = rc3_min[sys_id].param_value;
+        if (msg_id == mavlink.MAVLINK_MSG_ID_HEARTBEAT) {
+            if (ver == 'fd') {
+                var base_offset = 20;
+                var custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var type = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var system_status = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
             }
             else {
-                rc3_trim[sys_id].param_value = (rc3_max[sys_id].param_value + rc3_min[sys_id].param_value) / 2;
+                base_offset = 12;
+                custom_mode = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                type = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                autopilot = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                base_mode = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                system_status = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mavlink_version = mavPacket.substr(base_offset, 2).toLowerCase();
             }
+
+            //console.log(content_each);
+            if (!hb.hasOwnProperty(sys_id)) {
+                hb[sys_id] = {};
+            }
+            hb[sys_id].type = Buffer.from(type, 'hex').readUInt8(0);
+            hb[sys_id].autopilot = Buffer.from(autopilot, 'hex').readUInt8(0);
+            hb[sys_id].base_mode = Buffer.from(base_mode, 'hex').readUInt8(0);
+            hb[sys_id].custom_mode = Buffer.from(custom_mode, 'hex').readUInt32LE(0);
+            hb[sys_id].system_status = Buffer.from(system_status, 'hex').readUInt8(0);
+            hb[sys_id].mavlink_version = Buffer.from(mavlink_version, 'hex').readUInt8(0);
+
+            if (rc3_trim.hasOwnProperty(sys_id) && rc3_max.hasOwnProperty(sys_id) && rc3_min.hasOwnProperty(sys_id)) {
+                if (hb[sys_id].custom_mode == 0) {
+                    rc3_trim[sys_id].param_value = rc3_min[sys_id].param_value;
+                }
+                else {
+                    rc3_trim[sys_id].param_value = (rc3_max[sys_id].param_value + rc3_min[sys_id].param_value) / 2;
+                }
+            }
+        }
+
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
+            if (ver == 'fd') {
+                base_offset = 20;
+                var time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var lat = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var lon = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var alt = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var vx = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var vy = mavPacket.substr(base_offset, 4).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                lat = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                lon = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                alt = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                vx = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                vy = mavPacket.substr(base_offset, 4).toLowerCase();
+            }
+
+            if (!gpi.hasOwnProperty(sys_id)) {
+                gpi[sys_id] = {};
+            }
+
+            gpi[sys_id].time_boot_ms = Buffer.from(time_boot_ms, 'hex').readUInt32LE(0);
+            gpi[sys_id].lat = Buffer.from(lat, 'hex').readInt32LE(0);
+            gpi[sys_id].lon = Buffer.from(lon, 'hex').readInt32LE(0);
+            gpi[sys_id].alt = Buffer.from(alt, 'hex').readInt32LE(0);
+            gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
+            gpi[sys_id].vx = Buffer.from(vx, 'hex').readInt16LE(0);
+            gpi[sys_id].vy = Buffer.from(vy, 'hex').readInt16LE(0);
+
+            if (resetGpiTimer.hasOwnProperty(sys_id)) {
+                clearTimeout(resetGpiTimer[sys_id]);
+            }
+
+            resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
+        }
+
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_PARAM_VALUE) {
+            if (ver == 'fd') {
+                base_offset = 20;
+                var param_value = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                var param_count = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var param_index = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var param_id = mavPacket.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                var param_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                param_value = mavPacket.substr(base_offset, 8).toLowerCase();
+                base_offset += 8;
+                param_count = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                param_index = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                param_id = mavPacket.substr(base_offset, 32).toLowerCase();
+                base_offset += 32;
+                param_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+
+            param_id = Buffer.from(param_id, "hex").toString('ASCII');
+
+            if (param_id.includes('RC1_MIN')) {
+                //console.log(param_id);
+                if (!rc1_min.hasOwnProperty(sys_id)) {
+                    rc1_min[sys_id] = {};
+                }
+
+                rc1_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC1_MAX')) {
+                //console.log(param_id);
+                if (!rc1_max.hasOwnProperty(sys_id)) {
+                    rc1_max[sys_id] = {};
+                }
+
+                rc1_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC1_TRIM')) {
+                //console.log(param_id);
+                if (!rc1_trim.hasOwnProperty(sys_id)) {
+                    rc1_trim[sys_id] = {};
+                }
+
+                rc1_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc1_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc1_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc1_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC2_MIN')) {
+                //console.log(param_id);
+                if (!rc2_min.hasOwnProperty(sys_id)) {
+                    rc2_min[sys_id] = {};
+                }
+
+                rc2_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC2_MAX')) {
+                //console.log(param_id);
+                if (!rc2_max.hasOwnProperty(sys_id)) {
+                    rc2_max[sys_id] = {};
+                }
+
+                rc2_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC2_TRIM')) {
+                //console.log(param_id);
+                if (!rc2_trim.hasOwnProperty(sys_id)) {
+                    rc2_trim[sys_id] = {};
+                }
+
+                rc2_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc2_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc2_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc2_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC3_MIN')) {
+                //console.log(param_id);
+                if (!rc3_min.hasOwnProperty(sys_id)) {
+                    rc3_min[sys_id] = {};
+                }
+
+                rc3_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC3_MAX')) {
+                //console.log(param_id);
+                if (!rc3_max.hasOwnProperty(sys_id)) {
+                    rc3_max[sys_id] = {};
+                }
+
+                rc3_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC3_TRIM')) {
+                //console.log(param_id);
+                if (!rc3_trim.hasOwnProperty(sys_id)) {
+                    rc3_trim[sys_id] = {};
+                }
+
+                rc3_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc3_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc3_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc3_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC4_MIN')) {
+                //console.log(param_id);
+                if (!rc4_min.hasOwnProperty(sys_id)) {
+                    rc4_min[sys_id] = {};
+                }
+
+                rc4_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC4_MAX')) {
+                //console.log(param_id);
+                if (!rc4_max.hasOwnProperty(sys_id)) {
+                    rc4_max[sys_id] = {};
+                }
+
+                rc4_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+            else if (param_id.includes('RC4_TRIM')) {
+                //console.log(param_id);
+                if (!rc4_trim.hasOwnProperty(sys_id)) {
+                    rc4_trim[sys_id] = {};
+                }
+
+                rc4_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
+                rc4_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
+                rc4_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
+                rc4_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
+            }
+        }
+
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
+            if (ver == 'fd') {
+                base_offset = 20;
+                var mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                var target_system = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var target_component = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
+                base_offset += 4;
+                target_system = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                target_component = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+
+            if (mission_request.hasOwnProperty(sys_id)) {
+                var mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
+                mission_request[sys_id].target_system = mission_result;
+                mission_result = Buffer.from(mission_sequence, 'hex').readUInt16LE(0);
+                mission_request[sys_id].seq = mission_result;
+            }
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
+            if (ver == 'fd') {
+                base_offset = 20;
+                target_system = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                target_component = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                var mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+            else {
+                base_offset = 12;
+                target_system = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                target_component = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
+                base_offset += 2;
+                mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
+            }
+
+            if (result_mission_ack.hasOwnProperty(sys_id)) {
+                mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
+                result_mission_ack[sys_id].target_system = mission_result;
+                mission_result = Buffer.from(mission_result_type, 'hex').readUInt8(0);
+                result_mission_ack[sys_id].type = mission_result;
+            }
+        }
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
+            // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
         }
     }
-
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
-        if (ver == 'fd') {
-            base_offset = 20;
-            var time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var lat = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var lon = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var alt = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var vx = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            var vy = mavPacket.substr(base_offset, 4).toLowerCase();
-        }
-        else {
-            base_offset = 12;
-            time_boot_ms = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            lat = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            lon = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            alt = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            relative_alt = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            vx = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            vy = mavPacket.substr(base_offset, 4).toLowerCase();
-        }
-
-        if (!gpi.hasOwnProperty(sys_id)) {
-            gpi[sys_id] = {};
-        }
-
-        gpi[sys_id].time_boot_ms = Buffer.from(time_boot_ms, 'hex').readUInt32LE(0);
-        gpi[sys_id].lat = Buffer.from(lat, 'hex').readInt32LE(0);
-        gpi[sys_id].lon = Buffer.from(lon, 'hex').readInt32LE(0);
-        gpi[sys_id].alt = Buffer.from(alt, 'hex').readInt32LE(0);
-        gpi[sys_id].relative_alt = Buffer.from(relative_alt, 'hex').readInt32LE(0);
-        gpi[sys_id].vx = Buffer.from(vx, 'hex').readInt16LE(0);
-        gpi[sys_id].vy = Buffer.from(vy, 'hex').readInt16LE(0);
-
-        if(resetGpiTimer.hasOwnProperty(sys_id)) {
-            clearTimeout(resetGpiTimer[sys_id]);
-        }
-
-        resetGpiTimer[sys_id] = setTimeout(resetGpiValue, 2000, sys_id);
-    }
-
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_PARAM_VALUE) {
-        if (ver == 'fd') {
-            base_offset = 20;
-            var param_value = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            var param_count = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            var param_index = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            var param_id = mavPacket.substr(base_offset, 32).toLowerCase();
-            base_offset += 32;
-            var param_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-        else {
-            base_offset = 12;
-            param_value = mavPacket.substr(base_offset, 8).toLowerCase();
-            base_offset += 8;
-            param_count = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            param_index = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            param_id = mavPacket.substr(base_offset, 32).toLowerCase();
-            base_offset += 32;
-            param_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-
-        param_id = Buffer.from(param_id, "hex").toString('ASCII');
-
-        if (param_id.includes('RC1_MIN')) {
-            //console.log(param_id);
-            if (!rc1_min.hasOwnProperty(sys_id)) {
-                rc1_min[sys_id] = {};
-            }
-
-            rc1_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc1_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc1_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc1_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC1_MAX')) {
-            //console.log(param_id);
-            if (!rc1_max.hasOwnProperty(sys_id)) {
-                rc1_max[sys_id] = {};
-            }
-
-            rc1_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc1_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc1_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc1_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC1_TRIM')) {
-            //console.log(param_id);
-            if (!rc1_trim.hasOwnProperty(sys_id)) {
-                rc1_trim[sys_id] = {};
-            }
-
-            rc1_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc1_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc1_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc1_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC2_MIN')) {
-            //console.log(param_id);
-            if (!rc2_min.hasOwnProperty(sys_id)) {
-                rc2_min[sys_id] = {};
-            }
-
-            rc2_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc2_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc2_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc2_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC2_MAX')) {
-            //console.log(param_id);
-            if (!rc2_max.hasOwnProperty(sys_id)) {
-                rc2_max[sys_id] = {};
-            }
-
-            rc2_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc2_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc2_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc2_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC2_TRIM')) {
-            //console.log(param_id);
-            if (!rc2_trim.hasOwnProperty(sys_id)) {
-                rc2_trim[sys_id] = {};
-            }
-
-            rc2_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc2_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc2_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc2_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC3_MIN')) {
-            //console.log(param_id);
-            if (!rc3_min.hasOwnProperty(sys_id)) {
-                rc3_min[sys_id] = {};
-            }
-
-            rc3_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc3_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc3_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc3_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC3_MAX')) {
-            //console.log(param_id);
-            if (!rc3_max.hasOwnProperty(sys_id)) {
-                rc3_max[sys_id] = {};
-            }
-
-            rc3_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc3_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc3_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc3_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC3_TRIM')) {
-            //console.log(param_id);
-            if (!rc3_trim.hasOwnProperty(sys_id)) {
-                rc3_trim[sys_id] = {};
-            }
-
-            rc3_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc3_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc3_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc3_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC4_MIN')) {
-            //console.log(param_id);
-            if (!rc4_min.hasOwnProperty(sys_id)) {
-                rc4_min[sys_id] = {};
-            }
-
-            rc4_min[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc4_min[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc4_min[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc4_min[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC4_MAX')) {
-            //console.log(param_id);
-            if (!rc4_max.hasOwnProperty(sys_id)) {
-                rc4_max[sys_id] = {};
-            }
-
-            rc4_max[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc4_max[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc4_max[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc4_max[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-        else if (param_id.includes('RC4_TRIM')) {
-            //console.log(param_id);
-            if (!rc4_trim.hasOwnProperty(sys_id)) {
-                rc4_trim[sys_id] = {};
-            }
-
-            rc4_trim[sys_id].param_value = Buffer.from(param_value, 'hex').readFloatLE(0);
-            rc4_trim[sys_id].param_type = Buffer.from(param_type, 'hex').readInt8(0);
-            rc4_trim[sys_id].param_count = Buffer.from(param_count, 'hex').readInt16LE(0);
-            rc4_trim[sys_id].param_index = Buffer.from(param_index, 'hex').readUInt16LE(0);
-        }
-    }
-
-    if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST - ' + mavPacket);
-        if (ver == 'fd') {
-            base_offset = 20;
-            var mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            var target_system = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var target_component = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-        else {
-            base_offset = 12;
-            mission_sequence = mavPacket.substr(base_offset, 4).toLowerCase();
-            base_offset += 4;
-            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-
-        if(mission_request.hasOwnProperty(sys_id)) {
-            var mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
-            mission_request[sys_id].target_system = mission_result;
-            mission_result = Buffer.from(mission_sequence, 'hex').readUInt16LE(0);
-            mission_request[sys_id].seq = mission_result;
-        }
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_REQUEST_LIST - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_COUNT) { // #33 - global_position_int
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_COUNT - ' + mavPacket);
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ACK) { // #33 - global_position_int
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ACK - ' + mavPacket);
-        if (ver == 'fd') {
-            base_offset = 20;
-            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            var mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-        else {
-            base_offset = 12;
-            target_system = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            target_component = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            mission_result_type = mavPacket.substr(base_offset, 2).toLowerCase();
-            base_offset += 2;
-            mission_type = mavPacket.substr(base_offset, 2).toLowerCase();
-        }
-
-        if(result_mission_ack.hasOwnProperty(sys_id)) {
-            mission_result = Buffer.from(target_system, 'hex').readUInt8(0);
-            result_mission_ack[sys_id].target_system = mission_result;
-            mission_result = Buffer.from(mission_result_type, 'hex').readUInt8(0);
-            result_mission_ack[sys_id].type = mission_result;
-        }
-    }
-    else if (msg_id == mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT) {
-        // console.log('---> ' + 'MAVLINK_MSG_ID_MISSION_ITEM_INT - ' + mavPacket);
+    catch (e) {
+        console.log(e.message);
     }
 }
 
