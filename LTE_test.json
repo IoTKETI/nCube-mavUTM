@@ -1,0 +1,29 @@
+[
+  {
+    "name": "LTE_Tester_KT",
+    "gcs": "KETI_MUV",
+    "goto_position": [
+      "cancel",
+      "37.2612280:126.6760550:50:10:30"
+    ],
+    "system_id": 12
+  },
+  {
+    "name": "LTE_Tester_SKT",
+    "gcs": "KETI_MUV",
+    "goto_position": [
+      "cancel",
+      "37.2612280:126.6760550:50:10:30"
+    ],
+    "system_id": 13
+  },
+  {
+    "name": "LTE_Tester_LGU",
+    "gcs": "KETI_MUV",
+    "goto_position": [
+      "cancel",
+      "37.2612173:126.6760492:50:10:30"
+    ],
+    "system_id": 14
+  }
+]
