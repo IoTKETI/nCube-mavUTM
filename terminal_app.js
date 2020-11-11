@@ -3404,7 +3404,7 @@ setInterval(function () {
                 }
 
                 term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s]", drone_selected);
-                term.moveTo.magenta(32, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
+                term.moveTo.magenta(24, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
             }
         }
     }
