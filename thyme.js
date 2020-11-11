@@ -39,7 +39,7 @@ conf.gcs_sys_id = 255;
 // AE core
 conf.aei = "SgMavUTM"
 
-conf.gcs = 'UTM_UVARC';
+conf.gcs = 'KETI_MUV';
 
 conf.drone = [];
 
