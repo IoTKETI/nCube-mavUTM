@@ -65,7 +65,7 @@ function mqtt_connect(serverip) {
             if (conf.running_type === 'local') {
                 for (var idx in conf.drone) {
                     if (conf.drone.hasOwnProperty(idx)) {
-                        var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                        var noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
                         mqtt_client.subscribe(noti_topic);
                         console.log('subscribe - ' + noti_topic);
 
@@ -223,7 +223,7 @@ function onem2m_mqtt_noti_action(topic_arr, jsonObj) {
 
                         for (var idx in conf.drone) {
                             if (conf.drone.hasOwnProperty(idx)) {
-                                var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                                var noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
                                 mqtt_client.unsubscribe(noti_topic);
                                 console.log('unsubscribe - ' + noti_topic);
                             }
@@ -238,7 +238,7 @@ function onem2m_mqtt_noti_action(topic_arr, jsonObj) {
                         conf.drone = JSON.parse(JSON.stringify(cinObj.con)).drone;
                         for (idx in conf.drone) {
                             if (conf.drone.hasOwnProperty(idx)) {
-                                noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                                noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
                                 mqtt_client.subscribe(noti_topic);
                                 console.log('subscribe - ' + noti_topic);
                             }
@@ -260,7 +260,7 @@ function retrieve_drone() {
             conf.drone = JSON.parse(JSON.stringify(res_body[Object.keys(res_body)[0]].con)).drone;
             for (var idx in conf.drone) {
                 if (conf.drone.hasOwnProperty(idx)) {
-                    var noti_topic = '/Mobius/' + conf.drone[idx].gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
+                    var noti_topic = '/Mobius/' + conf.gcs + '/Drone_Data/' + conf.drone[idx].name + '/#';
                     mqtt_client.subscribe(noti_topic);
                     console.log('subscribe - ' + noti_topic);
                 }
@@ -488,14 +488,13 @@ function send_to_drone_from_gcs(msg) {
     for (var idx in conf.drone) {
         if (conf.drone.hasOwnProperty(idx)) {
             if (this.id == conf.drone[idx].system_id) {
-                var parent = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
+                var parent = '/Mobius/' + conf.gcs + '/GCS_Data/' + conf.drone[idx].name;
                 mqtt_client.publish(parent, msg);
             }
         }
     }
 
     mavStrFromGcs += hex(msg);
-
     while(mavStrFromGcs.length > 12) {
         var stx = mavStrFromGcs.substr(0, 2);
         if(stx === 'fe') {
@@ -625,7 +624,6 @@ function send_to_gcs_from_drone(topic, content_each) {
     }
 
     mavStrFromDrone[topic] += hex(content_each);
-
     while(mavStrFromDrone[topic].length > 12) {
         var stx = mavStrFromDrone[topic].substr(0, 2);
         if(stx === 'fe') {

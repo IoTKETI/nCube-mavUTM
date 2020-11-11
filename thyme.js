@@ -39,11 +39,11 @@ conf.gcs_sys_id = 255;
 // AE core
 conf.aei = "SgMavUTM"
 
-conf.gcs = 'UTM_UVARC';
+conf.gcs = 'KETI_MUV';
 
 conf.drone = [];
 
-global.drone_info_file = 'rkah_1_route.json'; //'rkah_1_route.json';
+global.drone_info_file = 'LTE_test.json'; //'rkah_1_route.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));

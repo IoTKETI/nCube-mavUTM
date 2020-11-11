@@ -141,7 +141,7 @@ function startMenu() {
             cur_drone_list_selected = [].concat(conf.drone);
 
             cur_command_items.splice(cur_command_items.indexOf('Follow'), 1);
-            cur_command_items.splice(cur_command_items.indexOf('Real_Control'), 1);
+            //cur_command_items.splice(cur_command_items.indexOf('Real_Control'), 1);
         }
         else if (startMenuDroneSelected === 'Quit') {
             process.exit();
@@ -432,10 +432,11 @@ function actionAllGotoCircle(input) {
             var alt = parseFloat(arr_cur_goto_position[2]);
             var speed = parseFloat(arr_cur_goto_position[3]);
             var radius = parseFloat(arr_cur_goto_position[4]);
+            var circle_speed = parseFloat(arr_cur_goto_position[5]);
 
             setTimeout(send_circle_radius_param_set_command, 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], radius);
 
-            var degree_speed = parseInt((speed / radius) * (180 / 3.14), 10);
+            var degree_speed = parseInt((circle_speed / radius) * (180 / 3.14), 10);
             setTimeout(send_circle_rate_param_set_command, 200 + 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], degree_speed);
 
             // set GUIDED Mode
