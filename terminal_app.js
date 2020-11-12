@@ -346,11 +346,7 @@ function allTakeoffMenu() {
                 history.push(input);
                 history.shift();
 
-                var alt = parseFloat(input);
-
-                if (alt < 2.0) {
-                    alt = 2.0;
-                }
+                var arr_input = input.split(':');
 
                 var command_delay = 0;
                 column_count = 5;
@@ -368,6 +364,16 @@ function allTakeoffMenu() {
                         setTimeout(send_set_mode_command, 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
                         setTimeout(send_arm_command, 500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
+
+                        if(arr_input.hasOwnProperty(idx)) {
+                            var alt = parseFloat(arr_input[idx]);
+                            if (alt < 2.0) {
+                                alt = 2.0;
+                            }
+                        }
+                        else {
+                            alt = parseFloat(arr_input[0]);
+                        }
 
                         setTimeout(send_takeoff_command, 6500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], alt);
                     }
@@ -532,7 +538,7 @@ function allGotoAltMenu() {
                 history.push(input);
                 history.shift();
 
-                var alt = parseFloat(input);
+                var arr_input = input.split(':');
 
                 var command_delay = 0;
                 column_count = 5;
@@ -548,6 +554,13 @@ function allGotoAltMenu() {
                         var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+
+                        if(arr_input.hasOwnProperty(idx)) {
+                            var alt = parseFloat(arr_input[idx]);
+                        }
+                        else {
+                            alt = parseFloat(arr_input[0]);
+                        }
 
                         setTimeout(send_goto_alt_command, 500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], alt);
                     }
@@ -2490,7 +2503,7 @@ function send_takeoff_command(target_name, pub_topic, target_sys_id, alt) {
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Takeoff command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Takeoff command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + alt, target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
@@ -2609,7 +2622,7 @@ function send_goto_alt_command(target_name, pub_topic, target_sys_id, alt) {
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Goto Alt command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Goto Alt command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + alt, target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
@@ -2672,7 +2685,7 @@ function result_mission_item_complete(target_name, pub_topic, target_sys_id, lat
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
-            term.moveTo.blue(136, conf.drone.length + result_column, result_check_count + ' - result_mission_item_complete ', target_name);
+            term.moveTo.blue(152, conf.drone.length + result_column, result_check_count + ' - result_mission_item_complete ', target_name);
             setTimeout(result_mission_item_complete, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count);
         }
     }
@@ -2690,7 +2703,7 @@ function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
-            term.moveTo.blue(136, conf.drone.length + result_column, result_check_count + ' - result_mission_protocol ', target_name);
+            term.moveTo.blue(152, conf.drone.length + result_column, result_check_count + ' - result_mission_protocol ', target_name);
             setTimeout(result_mission_protocol, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count);
         }
     }
@@ -2741,7 +2754,7 @@ function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, 
         }
         else {
             result_column = column_count;
-            term.moveTo.blue(1, conf.drone.length + column_count++, seq + ' Send MISSION_ITEM to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, seq + ' Send MISSION_ITEM to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
             mqtt_client.publish(pub_topic, msg);
 
             if(seq < 1) {
@@ -2783,7 +2796,7 @@ function send_mission_count(target_name, pub_topic, target_sys_id, latitude, lon
         }
         else {
             result_column = column_count;
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_COUNT to %s, msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_COUNT to %s, msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
             mqtt_client.publish(pub_topic, msg);
 
             if(!mission_request.hasOwnProperty(target_sys_id)) {
@@ -2832,7 +2845,7 @@ function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitud
         }
         else {
             result_column = column_count;
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Mission Clear All command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Mission Clear All command to %s, msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
             mqtt_client.publish(pub_topic, msg);
 
             if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
