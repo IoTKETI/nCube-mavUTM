@@ -5,10 +5,10 @@ var mavlink = require('./mavlibrary/mavlink.js');
 
 var term = require('terminal-kit').terminal;
 
-var command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'Auto_GoTo', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY','Follow', 'Params', 'Real_Control'];
+var command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'RTL', 'Auto_GoTo', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY','Follow', 'Params', 'Real_Control'];
 var cur_command_items = [];
 
-var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_ATC_SLEW_YAW', 'set_ACRO_YAW_P', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO_Param', 'set_SYSID_THISMAV', 'Reboot',
+var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_ATC_SLEW_YAW', 'set_ACRO_YAW_P', 'set_WPNAV_RADIUS', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO_Param', 'set_SYSID_THISMAV', 'Reboot',
     'get_Joystick_Params'];
 
 var follow_items = ['Back', 'set_Follow_Params', 'set_Follow'];
@@ -218,6 +218,9 @@ function allMenu() {
         }
         else if (response.selectedText === 'Land') {
             allLandMenu();
+        }
+        else if (response.selectedText === 'RTL') {
+            allRTLMenu();
         }
         else if (response.selectedText === 'Auto_GoTo') {
             allAutoGotoMenu();
@@ -754,6 +757,24 @@ function allLandMenu() {
 
             command_delay++;
             setTimeout(send_land_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
+        }
+    }
+
+    setTimeout(allMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
+}
+
+function allRTLMenu() {
+    term.eraseDisplayBelow();
+    term.moveTo.red(1, conf.drone.length + 3, '');
+
+    var command_delay = 0;
+    column_count = 3;
+    for (idx in cur_drone_list_selected) {
+        if (cur_drone_list_selected.hasOwnProperty(idx)) {
+            var drone_selected = cur_drone_list_selected[idx].name;
+
+            command_delay++;
+            setTimeout(send_rtl_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
         }
     }
 
@@ -1671,6 +1692,57 @@ function allParamsMenu() {
                                 command_delay++;
 
                                 setTimeout(send_acro_yaw_p_param_set_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], gain);
+                            }
+                        }
+
+                        setTimeout(allParamsMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
+                    }
+
+                    printFlag = 'enable';
+                }
+            );
+        }
+        else if (response.selectedText === 'set_WPNAV_RADIUS') {
+            printFlag = 'disable';
+
+            term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select Value (cm): ');
+            term.eraseDisplayBelow();
+
+            term.inputField(
+                {history: history, autoComplete: ['cancel', '50', '100', '150', '200', '250', '300'], autoCompleteMenu: true},
+                function (error, input) {
+                    term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
+                        "%s selected\n",
+                        input
+                    );
+
+                    if (input === 'cancel') {
+                        setTimeout(allParamsMenu, back_menu_delay);
+                    }
+                    else {
+                        history.push(input);
+                        history.shift();
+
+                        var r = parseFloat(input);
+
+                        if (r > 1000.0) {
+                            r = 1000.0;
+                        }
+
+                        if (r < 5) {
+                            r = 50
+                        }
+
+                        column_count = 5;
+
+                        var command_delay = 0;
+                        for (var idx in cur_drone_list_selected) {
+                            if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                                var drone_selected = cur_drone_list_selected[idx].name;
+
+                                command_delay++;
+
+                                setTimeout(send_wpnav_radius_param_set_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], r);
                             }
                         }
 
@@ -2992,8 +3064,7 @@ function send_rtl_command(target_name, pub_topic, target_sys_id) {
             console.log("mavlink message is null");
         }
         else {
-            term.blue('Send RTL command to %s\n', target_name);
-            term.red('msg: ' + msg.toString('hex') + '\n');
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send RTL command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
@@ -3180,6 +3251,29 @@ function send_acro_yaw_p_param_set_command(target_name, pub_topic, target_sys_id
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send ACRO_YAW_P param set command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            mqtt_client.publish(pub_topic, msg);
+        }
+    }
+    catch (ex) {
+        console.log('[ERROR] ' + ex);
+    }
+}
+
+function send_wpnav_radius_param_set_command(target_name, pub_topic, target_sys_id, value) {
+    var btn_params = {};
+    btn_params.target_system = target_sys_id;
+    btn_params.target_component = 1;
+    btn_params.param_id = "WPNAV_RADIUS";
+    btn_params.param_type = mavlink.MAV_PARAM_TYPE_UINT16;
+    btn_params.param_value = value; // Defines the distance from a waypoint, that when crossed indicates the wp has been hit. (5 ~ 1000 cm)
+
+    try {
+        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (msg == null) {
+            console.log("mavlink message is null");
+        }
+        else {
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send WPNAV_RADIUS param set command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + value, target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
