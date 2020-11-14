@@ -63,6 +63,8 @@ catch (e) {
     fs.writeFileSync(drone_info_file, JSON.stringify(conf.drone, null, 4), 'utf8');
 }
 
+conf.auto_landing = 'disable';
+conf.auto_led = 'disable';
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
