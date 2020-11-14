@@ -732,14 +732,12 @@ function allHoldMenu() {
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-            // set GUIDED Mode
-            var custom_mode = 4;
+            // set BRAKE Mode
+            var custom_mode = 17;
             var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
-
-            setTimeout(send_hold_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
-        }
+       }
     }
 
     setTimeout(allMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
