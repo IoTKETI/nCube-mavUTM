@@ -3565,7 +3565,7 @@ setInterval(function () {
                         autoLandingGearFlag[drone_selected] == 'up';
                     }
                 }
-                else {
+                else if(cur_alt < 5.0 && cur_mode == 'LAND') {
                     if(autoLandingGearFlag[drone_selected] == 'up') {
                         number = 9;
                         pwm = 1100;
@@ -3584,7 +3584,7 @@ setInterval(function () {
                         autoLedFlag[drone_selected] == 'on';
                     }
                 }
-                else {
+                else if(status == 'Disarmed') {
                     if(autoLedFlag[drone_selected] == 'on') {
                         number = 10;
                         pwm = 1100;
