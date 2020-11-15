@@ -35,6 +35,24 @@ var options = {
 
 
 var history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var takeoff_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var goto_alt_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var roi_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var servo_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var relay_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var mission_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var wpnav_speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var wpnav_speed_dn_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var atc_slew_yaw_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var acro_yaw_p_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var wpnav_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var circle_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var circle_rate_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var servo_param_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var sysid_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+var follow_params_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+
 var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
     'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'DRIFT', 'RESERVED_12', 'SPORT',
     'FLIP', 'AUTOTUNE', 'POS_HOLD', 'BRAKE', 'THROW', 'AVOID_ADSB', 'GUIDED_NOGPS', 'SAFE_RTL'];
@@ -302,8 +320,8 @@ function allModeMenu() {
         }
         else {
             cur_mode_selected = input;
-            history.push(input);
-            history.shift();
+            // history.push(input);
+            // history.shift();
 
             var custom_mode = mode_items.indexOf(cur_mode_selected) - 1;
             var command_delay = 0;
@@ -333,7 +351,7 @@ function allTakeoffMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Height : ');
 
     term.inputField(
-        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
+        {history: takeoff_history, autoComplete: alt_items, autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -346,8 +364,8 @@ function allTakeoffMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                takeoff_history.push(input);
+                takeoff_history.shift();
 
                 var arr_input = input.split(':');
 
@@ -518,8 +536,8 @@ function allGotoMenu() {
             setTimeout(allMenu, back_menu_delay);
         }
         else {
-            history.push(input);
-            history.shift();
+            // history.push(input);
+            // history.shift();
 
             column_count = 3;
             actionAllGoto(input);
@@ -537,7 +555,7 @@ function allGotoAltMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Altitude : ');
 
     term.inputField(
-        {history: history, autoComplete: alt_items, autoCompleteMenu: true},
+        {history: goto_alt_history, autoComplete: alt_items, autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -550,8 +568,8 @@ function allGotoAltMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                goto_alt_history.push(input);
+                goto_alt_history.shift();
 
                 var arr_input = input.split(':');
 
@@ -634,8 +652,8 @@ function allGotoCircleMenu() {
             setTimeout(allMenu, back_menu_delay);
         }
         else {
-            history.push(input);
-            history.shift();
+            // history.push(input);
+            // history.shift();
 
             column_count = 3;
             actionAllGotoCircle(input);
@@ -654,7 +672,7 @@ function allChangeSpeedMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Speed (1 - 12 (m/s)): ');
 
     term.inputField(
-        {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+        {history: speed_history, autoComplete: speed_items, autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.green(
                 "%s selected\n",
@@ -667,8 +685,8 @@ function allChangeSpeedMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                speed_history.push(input);
+                speed_history.shift();
 
                 var speed = parseFloat(input);
 
@@ -1164,8 +1182,8 @@ function allAutoGotoMenu() {
             setTimeout(allMenu, back_menu_delay);
         }
         else {
-            history.push(input);
-            history.shift();
+            // history.push(input);
+            // history.shift();
 
             column_count = 3;
             actionAllAutoGoto(curAllAutoGotoIndex);
@@ -1180,7 +1198,7 @@ function allSetRoiMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Interest ([lat]:[lon]:[alt]): ');
 
     term.inputField(
-        {history: history, autoComplete: interest_items, autoCompleteMenu: true},
+        {history: roi_history, autoComplete: interest_items, autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -1193,8 +1211,8 @@ function allSetRoiMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                roi_history.push(input);
+                roi_history.shift();
 
                 var arr_cur_interest_lat = input.split(':');
                 var lat = parseFloat(arr_cur_interest_lat[0]);
@@ -1232,7 +1250,7 @@ function allSetServoMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[PWM]): ');
 
     term.inputField(
-        {history: history, autoComplete: ['cancel', '0:1500', '1:1800', '2:1000', '3:800', '4:1200', '5:1200', '6:1200', '7:1200'], autoCompleteMenu: true},
+        {history: servo_history, autoComplete: ['cancel', '0:1500', '1:1800', '2:1000', '3:800', '4:1200', '5:1200', '6:1200', '7:1200'], autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -1245,8 +1263,8 @@ function allSetServoMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                servo_history.push(input);
+                servo_history.shift();
 
                 var arr_servo = input.split(':');
                 var number = parseFloat(arr_servo[0]);
@@ -1283,7 +1301,7 @@ function allSetRelayMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[val]): ');
 
     term.inputField(
-        {history: history, autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1'], autoCompleteMenu: true},
+        {history: relay_history, autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1'], autoCompleteMenu: true},
         function (error, input) {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
@@ -1296,8 +1314,8 @@ function allSetRelayMenu() {
                 setTimeout(allMenu, back_menu_delay);
             }
             else {
-                history.push(input);
-                history.shift();
+                relay_history.push(input);
+                relay_history.shift();
 
                 var arr_relay = input.split(':');
                 var number = parseFloat(arr_relay[0]);
@@ -1334,7 +1352,7 @@ function allStartMissionMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Start Number: ');
 
     term.inputField(
-    {history: history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], autoCompleteMenu: true}, function (error, input) {
+    {history: mission_history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], autoCompleteMenu: true}, function (error, input) {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
             "%s selected\n",
             input
@@ -1346,6 +1364,9 @@ function allStartMissionMenu() {
             setTimeout(allMenu, back_menu_delay);
         }
         else {
+            mission_history.push(input);
+            mission_history.shift();
+
             var start_number = parseInt(input, 10);
 
             column_count = 5;
@@ -1474,8 +1495,8 @@ function allParamsMenu() {
                     setTimeout(allParamsMenu, back_menu_delay);
                 }
                 else {
-                    history.push(input);
-                    history.shift();
+                    // history.push(input);
+                    // history.shift();
 
                     var param_value = parseInt(response.selectedIndex, 10) - 1;
 
@@ -1515,7 +1536,7 @@ function allParamsMenu() {
             term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select Speed (1 - 12 (m/s)): ');
 
             term.inputField(
-                {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+                {history: wpnav_speed_history, autoComplete: speed_items, autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1526,8 +1547,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        wpnav_speed_history.push(input);
+                        wpnav_speed_history.shift();
 
                         var speed = parseFloat(input);
 
@@ -1566,7 +1587,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+                {history: wpnav_speed_dn_history, autoComplete: speed_items, autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1577,8 +1598,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        wpnav_speed_dn_history.push(input);
+                        wpnav_speed_dn_history.shift();
 
                         var speed = parseFloat(input);
 
@@ -1617,7 +1638,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: ['cancel', '5', '10', '15', '20', '25', '50', '100', '180'], autoCompleteMenu: true},
+                {history: atc_slew_yaw_history, autoComplete: ['cancel', '5', '10', '15', '20', '25', '50', '100', '180'], autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1628,8 +1649,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        atc_slew_yaw_history.push(input);
+                        atc_slew_yaw_history.shift();
 
                         var yaw_speed = parseFloat(input);
 
@@ -1668,7 +1689,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], autoCompleteMenu: true},
+                {history: acro_yaw_p_history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1679,8 +1700,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        acro_yaw_p_history.push(input);
+                        acro_yaw_p_history.shift();
 
                         var gain = parseFloat(input);
 
@@ -1719,7 +1740,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: ['cancel', '50', '100', '150', '200', '250', '300'], autoCompleteMenu: true},
+                {history: wpnav_radius_history, autoComplete: ['cancel', '50', '100', '150', '200', '250', '300'], autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1730,8 +1751,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        wpnav_radius_history.push(input);
+                        wpnav_radius_history.shift();
 
                         var r = parseFloat(input);
 
@@ -1770,7 +1791,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: radius_items, autoCompleteMenu: true},
+                {history: circle_radius_history, autoComplete: radius_items, autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1781,8 +1802,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        circle_radius_history.push(input);
+                        circle_radius_history.shift();
 
                         var radius = parseFloat(input);
 
@@ -1821,7 +1842,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: speed_items, autoCompleteMenu: true},
+                {history: circle_rate_history, autoComplete: speed_items, autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
@@ -1832,8 +1853,8 @@ function allParamsMenu() {
                         setTimeout(allParamsMenu, back_menu_delay);
                     }
                     else {
-                        history.push(input);
-                        history.shift();
+                        circle_rate_history.push(input);
+                        circle_rate_history.shift();
 
                         var speed = parseFloat(input);
 
@@ -1872,15 +1893,15 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: history, autoComplete: ['cancel', '9:0', '9:51', '9:52', '9:52', '9:53', '9:54', '9:55', '9:56', '9:57', '9:58', '9:59', '9:60', '9:61', '9:62', '9:63', '9:64', '9:65', '9:66'], autoCompleteMenu: true},
+                {history: servo_param_history, autoComplete: ['cancel', '9:0', '9:51', '9:52', '9:52', '9:53', '9:54', '9:55', '9:56', '9:57', '9:58', '9:59', '9:60', '9:61', '9:62', '9:63', '9:64', '9:65', '9:66'], autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
                     );
 
-                    history.push(input);
-                    history.shift();
+                    servo_param_history.push(input);
+                    servo_param_history.shift();
 
                     if (input === 'cancel') {
                         setTimeout(allParamsMenu, back_menu_delay);
@@ -1924,7 +1945,7 @@ function allParamsMenu() {
                 term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select id (random, 10 - 250): ');
 
                 term.inputField(
-                    {history: history, autoComplete: id_items, autoCompleteMenu: true},
+                    {history: sysid_history, autoComplete: id_items, autoCompleteMenu: true},
                     function (error, input) {
                         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                             "%s selected\n",
@@ -1935,8 +1956,8 @@ function allParamsMenu() {
                             setTimeout(allParamsMenu, back_menu_delay);
                         }
                         else {
-                            history.push(input);
-                            history.shift();
+                            sysid_history.push(input);
+                            sysid_history.shift();
 
                             if (input === 'random') {
                                 var id_val = parseInt(10 + Math.random() * 250, 10);
@@ -2095,7 +2116,7 @@ function eachFollowMenu() {
             term.moveTo.red(1, conf.drone.length + 3, 'Input Scripts ([sysid]:[dis_max]:[ofs_x]:[ofs_y]:[ofs_z]:[pos_p]): ');
 
             term.inputField(
-                {history: history, autoComplete: follow_params_items, autoCompleteMenu: true},
+                {history: follow_params_history, autoComplete: follow_params_items, autoCompleteMenu: true},
                 function (error, input) {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n", input);
@@ -2106,6 +2127,9 @@ function eachFollowMenu() {
                         setTimeout(eachFollowMenu, back_menu_delay);
                     }
                     else {
+                        follow_params_history.push(input);
+                        follow_params_history.shift();
+
                         var arr_cur_follow_params = input.split(':');
 
                         var command_delay = 0;
@@ -2159,8 +2183,8 @@ function eachFollowMenu() {
                     setTimeout(eachFollowMenu, back_menu_delay);
                 }
                 else {
-                    history.push(input);
-                    history.shift();
+                    // history.push(input);
+                    // history.shift();
 
                     var param_value = parseInt(response.selectedIndex, 10) - 1;
 
