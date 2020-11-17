@@ -3501,11 +3501,45 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
 // MAV_CMD_DO_SET_SERVO
 // Set a given servo pin output to a specific PWM value.
 
+var printFlag = '';
+setInterval(function () {
+    for (var idx in conf.drone) {
+        if (conf.drone.hasOwnProperty(idx)) {
+            var drone_selected = conf.drone[idx].name;
+
+            if(!autoLandingGearFlag.hasOwnProperty(drone_selected)) {
+                autoLandingGearFlag[drone_selected] = 'down';
+            }
+
+            if(!autoLedFlag.hasOwnProperty(drone_selected)) {
+                autoLedFlag[drone_selected] = 'off';
+            }
+
+            if(!curPosInfo.hasOwnProperty(drone_selected)) {
+                curPosInfo[drone_selected] = {};
+                curPosInfo[drone_selected].lat = 0.0;
+                curPosInfo[drone_selected].lon = 0.0;
+                curPosInfo[drone_selected].alt = 0.0;
+                curPosInfo[drone_selected].speed = 0.0;
+                curPosInfo[drone_selected].status = 'Disarmed';
+                curPosInfo[drone_selected].mode = 'Unknown';
+            }
+
+            if (printFlag === 'enable') {
+                term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s]", drone_selected);
+                term.moveTo.magenta(24, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s] [%s] [%s]",
+                    curPosInfo[drone_selected].lat.toFixed(7), curPosInfo[drone_selected].lon.toFixed(7), curPosInfo[drone_selected].alt.toFixed(1), curPosInfo[drone_selected].speed.toFixed(1),
+                    curPosInfo[drone_selected].status, curPosInfo[drone_selected].mode, goto_dist, autoLedFlag[drone_selected], autoLandingGearFlag[drone_selected]);
+            }
+        }
+    }
+}, 1000);
+
 var goto_dist = 0;
 var placeFlag = '';
-var printFlag = '';
 var autoLandingGearFlag = {};
 var autoLedFlag = {};
+var curPosInfo = {};
 setInterval(function () {
     var command_delay = 0;
     for (var idx in conf.drone) {
@@ -3522,25 +3556,35 @@ setInterval(function () {
                 autoLedFlag[drone_selected] = 'off';
             }
 
-            var cur_lat = (gpi[target_system_id[drone_selected]].lat / 10000000);
-            var cur_lon = (gpi[target_system_id[drone_selected]].lon / 10000000);
-            var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
-            var cur_speed = Math.sqrt(Math.pow(gpi[target_system_id[drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[drone_selected]].vy, 2)) / 100;
+            if(!curPosInfo.hasOwnProperty(drone_selected)) {
+                curPosInfo[drone_selected] = {};
+                curPosInfo[drone_selected].lat = 0.0;
+                curPosInfo[drone_selected].lon = 0.0;
+                curPosInfo[drone_selected].alt = 0.0;
+                curPosInfo[drone_selected].speed = 0.0;
+                curPosInfo[drone_selected].status = 'Disarmed';
+                curPosInfo[drone_selected].mode = 'Unknown';
+            }
 
-            var result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
+            curPosInfo[drone_selected].lat = (gpi[target_system_id[drone_selected]].lat / 10000000);
+            curPosInfo[drone_selected].lon = (gpi[target_system_id[drone_selected]].lon / 10000000);
+            curPosInfo[drone_selected].alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
+            curPosInfo[drone_selected].speed = Math.sqrt(Math.pow(gpi[target_system_id[drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[drone_selected]].vy, 2)) / 100;
+
+            var result1 = dfs_xy_conv('toXY', curPosInfo[drone_selected].lat, curPosInfo[drone_selected].lon);
 
             if (hb.hasOwnProperty(target_system_id[drone_selected])) {
                 if (hb[target_system_id[drone_selected]].base_mode & 0x80) {
-                    var status = 'Armed'
+                    curPosInfo[drone_selected].status = 'Armed'
                 }
                 else {
-                    status = 'Disarmed'
+                    curPosInfo[drone_selected].status = 'Disarmed'
                 }
-                var cur_mode = mode_items[hb[target_system_id[drone_selected]].custom_mode + 1];
+                curPosInfo[drone_selected].mode = mode_items[hb[target_system_id[drone_selected]].custom_mode + 1];
             }
             else {
-                status = 'Unknown';
-                cur_mode = 'Unknown';
+                curPosInfo[drone_selected].status = 'Unknown';
+                curPosInfo[drone_selected].mode = 'Unknown';
             }
 
             if (cur_goto_position_selected.hasOwnProperty(drone_selected)) {
@@ -3550,14 +3594,14 @@ setInterval(function () {
                 var tar_alt = parseFloat(arr_cur_goto_position[2]);
                 var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
-                goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2)).toFixed(2);
+                goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - curPosInfo[drone_selected].alt), 2)).toFixed(2);
             }
             else {
                 goto_dist = (0.00).toFixed(2);
             }
 
             if(conf.auto_landing_gear == 'enable') {
-                if(cur_alt > 10.0) {
+                if(curPosInfo[drone_selected].alt > 10.0) {
                     if(autoLandingGearFlag[drone_selected] != 'up') {
                         var number = 10;
                         var pwm = 1900;
@@ -3565,7 +3609,7 @@ setInterval(function () {
                         autoLandingGearFlag[drone_selected] = 'up';
                     }
                 }
-                else if(cur_alt < 10.0 && cur_mode == 'LAND') {
+                else if(curPosInfo[drone_selected].alt < 10.0 && curPosInfo[drone_selected].mode == 'LAND') {
                     if(autoLandingGearFlag[drone_selected] != 'down') {
                         number = 10;
                         pwm = 1100;
@@ -3576,7 +3620,7 @@ setInterval(function () {
             }
 
             if(conf.auto_led == 'enable') {
-                if(cur_alt > 5.0) {
+                if(curPosInfo[drone_selected].alt > 5.0) {
                     if(autoLedFlag[drone_selected] == 'off') {
                         number = 9;
                         pwm = 1900;
@@ -3584,7 +3628,7 @@ setInterval(function () {
                         autoLedFlag[drone_selected] = 'on';
                     }
                 }
-                else if(cur_alt < 5.0) { //if(status == 'Disarmed') {
+                else if(curPosInfo[drone_selected].alt < 5.0) { //if(status == 'Disarmed') {
                     if(autoLedFlag[drone_selected] == 'on') {
                         number = 9;
                         pwm = 1100;
@@ -3593,14 +3637,9 @@ setInterval(function () {
                     }
                 }
             }
-
-            if (printFlag === 'enable') {
-                term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s]", drone_selected);
-                term.moveTo.magenta(24, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist, autoLedFlag[drone_selected], autoLandingGearFlag[drone_selected]);
-            }
         }
     }
-}, 1000);
+}, 800);
 
 function send_param_get_command(target_name, pub_topic, target_sys_id, param_id) {
     var btn_params = {};
