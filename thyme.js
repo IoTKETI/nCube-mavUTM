@@ -43,7 +43,7 @@ conf.gcs = 'KETI_MUV';
 
 conf.drone = [];
 
-global.drone_info_file = 'LTE_test.json'; //'rkah_1_route.json';
+global.drone_info_file = 'kintex.json'; //'rkah_1_route.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
@@ -63,8 +63,8 @@ catch (e) {
     fs.writeFileSync(drone_info_file, JSON.stringify(conf.drone, null, 4), 'utf8');
 }
 
-conf.auto_landing_gear = 'disable';
-conf.auto_led = 'disable';
+conf.auto_landing_gear = 'enable';
+conf.auto_led = 'enable';
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 

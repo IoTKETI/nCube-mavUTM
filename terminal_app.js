@@ -3514,11 +3514,11 @@ setInterval(function () {
 
             var drone_selected = conf.drone[idx].name;
 
-            if(autoLandingGearFlag.hasOwnProperty(drone_selected)) {
+            if(!autoLandingGearFlag.hasOwnProperty(drone_selected)) {
                 autoLandingGearFlag[drone_selected] = 'down';
             }
 
-            if(autoLedFlag.hasOwnProperty(drone_selected)) {
+            if(!autoLedFlag.hasOwnProperty(drone_selected)) {
                 autoLedFlag[drone_selected] = 'off';
             }
 
@@ -3558,19 +3558,19 @@ setInterval(function () {
 
             if(conf.auto_landing_gear == 'enable') {
                 if(cur_alt > 10.0) {
-                    if(autoLandingGearFlag[drone_selected] == 'down') {
-                        var number = 9;
+                    if(autoLandingGearFlag[drone_selected] != 'up') {
+                        var number = 10;
                         var pwm = 1900;
                         setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
-                        autoLandingGearFlag[drone_selected] == 'up';
+                        autoLandingGearFlag[drone_selected] = 'up';
                     }
                 }
-                else if(cur_alt < 5.0 && cur_mode == 'LAND') {
-                    if(autoLandingGearFlag[drone_selected] == 'up') {
-                        number = 9;
+                else if(cur_alt < 10.0 && cur_mode == 'LAND') {
+                    if(autoLandingGearFlag[drone_selected] != 'down') {
+                        number = 10;
                         pwm = 1100;
                         setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
-                        autoLandingGearFlag[drone_selected] == 'down';
+                        autoLandingGearFlag[drone_selected] = 'down';
                     }
                 }
             }
@@ -3578,25 +3578,25 @@ setInterval(function () {
             if(conf.auto_led == 'enable') {
                 if(cur_alt > 5.0) {
                     if(autoLedFlag[drone_selected] == 'off') {
-                        number = 10;
+                        number = 9;
                         pwm = 1900;
                         setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
-                        autoLedFlag[drone_selected] == 'on';
+                        autoLedFlag[drone_selected] = 'on';
                     }
                 }
-                else if(status == 'Disarmed') {
+                else if(cur_alt < 5.0) { //if(status == 'Disarmed') {
                     if(autoLedFlag[drone_selected] == 'on') {
-                        number = 10;
+                        number = 9;
                         pwm = 1100;
                         setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
-                        autoLedFlag[drone_selected] == 'off';
+                        autoLedFlag[drone_selected] = 'off';
                     }
                 }
             }
 
             if (printFlag === 'enable') {
                 term.moveTo.eraseLine.magenta(1, parseInt(idx, 10) + 2, "[%s]", drone_selected);
-                term.moveTo.magenta(24, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist);
+                term.moveTo.magenta(24, parseInt(idx, 10) + 2, "%s:%s [%s] [%s] [%s] [%s] [%s] [%s] [%s]", cur_lat.toFixed(7), cur_lon.toFixed(7), cur_alt.toFixed(1), cur_speed.toFixed(1), status, cur_mode, goto_dist, autoLedFlag[drone_selected], autoLandingGearFlag[drone_selected]);
             }
         }
     }
