@@ -762,8 +762,10 @@ function allHoldMenu() {
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-            // set BRAKE Mode
-            var custom_mode = 17;
+            // // set BRAKE Mode
+            // var custom_mode = 17;
+            // set POS_HOLD Mode
+            var custom_mode = 16;
             var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
@@ -3156,7 +3158,7 @@ function send_set_servo_command(target_name, pub_topic, target_sys_id, target_nu
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Servo command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Servo command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + target_number + ':' + target_pwm, target_name);
             mqtt_client.publish(pub_topic, msg);
         }
     }
