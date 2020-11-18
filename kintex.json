@@ -1,7 +1,6 @@
 [
   {
     "name": "UMACAir11",
-    "gcs": "KETI_MUV",
     "goto_position": [
       "cancel",
       "37.6655331:126.7378972:40.0:5.0",
@@ -16,7 +15,6 @@
   },
   {
     "name": "UMACAir12",
-    "gcs": "KETI_MUV",
     "goto_position": [
       "cancel",
       "37.6654949:126.7380045:40.0:5.0",
@@ -31,7 +29,6 @@
   },
   {
     "name": "UMACAir13",
-    "gcs": "KETI_MUV",
     "goto_position": [
       "cancel",
       "37.6654461:126.7381144:40.0:5.0",
@@ -46,7 +43,6 @@
   },
   {
     "name": "UMACAir14",
-    "gcs": "KETI_MUV",
     "goto_position": [
       "cancel",
       "37.6654015:126.7382190:40.0:5.0",
