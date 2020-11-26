@@ -3603,7 +3603,8 @@ setInterval(function () {
             }
 
             if(conf.auto_landing_gear == 'enable') {
-                if(curPosInfo[drone_selected].alt > 10.0) {
+                if(curPosInfo[drone_selected].alt > 10.0 && curPosInfo[drone_selected].mode != 'ALT_HOLD' &&
+                    curPosInfo[drone_selected].mode != 'LOITER' && curPosInfo[drone_selected].mode != 'POS_HOLD') {
                     if(autoLandingGearFlag[drone_selected] != 'up') {
                         var number = 10;
                         var pwm = 1900;
@@ -3611,7 +3612,8 @@ setInterval(function () {
                         autoLandingGearFlag[drone_selected] = 'up';
                     }
                 }
-                else if(curPosInfo[drone_selected].alt < 10.0 && curPosInfo[drone_selected].mode == 'LAND') {
+                else if(curPosInfo[drone_selected].alt < 10.0 && curPosInfo[drone_selected].mode == 'LAND' &&
+                    curPosInfo[drone_selected].mode == 'RTL') {
                     if(autoLandingGearFlag[drone_selected] != 'down') {
                         number = 10;
                         pwm = 1100;
@@ -3886,3 +3888,34 @@ function dfs_xy_conv(code, v1, v2) {
 //
 // result = dfs_xy_conv('toLL', 108326, -367983);
 // console.log(result);
+
+
+//
+// exports.connect = function(uart, rxPin) {
+//     var sbus = {
+//         channels : new Uint16Array(18),
+//         frameLoss : false,
+//         failSafe : false
+//     };
+//     uart.setup(100000, {rx:rxPin, parity:"e",stopbits:2});
+//     uart.removeAllListeners();
+//     var data = "";
+//     uart.on('data', function(d) {
+//         data += d;
+//         var idx = data.indexOf("\x00\x0f");
+//         while (idx >= 0) {
+//             if (idx==23) {
+//                 var l = E.toUint8Array(data.substr(0,23));
+//                 var status = l[22];
+//                 E.mapInPlace(l,sbus.channels,undefined,-11);
+//                 sbus.channels.set([status&128?2047:0,status&64?2047:0],16);
+//                 sbus.frameLoss = !!(status&32);
+//                 sbus.failSafe = !!(status&16);
+//                 sbus.emit('frame', sbus);
+//             }
+//             data = data.substr(idx+2);
+//             idx = data.indexOf("\x00\x0f");
+//         }
+//     });
+//     return sbus;
+// };
