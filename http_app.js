@@ -597,6 +597,7 @@ global.rc3_trim = {};
 global.rc4_max = {};
 global.rc4_min = {};
 global.rc4_trim = {};
+global.ss = {};
 
 global.resetGpiTimer = {};
 
@@ -743,6 +744,22 @@ function parseMavFromDrone(mavPacket) {
                     rc3_trim[sys_id].param_value = (rc3_max[sys_id].param_value + rc3_min[sys_id].param_value) / 2;
                 }
             }
+        }
+
+        else if (msg_id == mavlink.MAVLINK_MSG_ID_SYS_STATUS) {
+            if (ver == 'fd') {
+                var base_offset = 20 + 28;
+                var voltage_battery = mavPacket.substr(base_offset, 8).toLowerCase();
+            }
+            else {
+                base_offset = 12 + 28;
+                voltage_battery = mavPacket.substr(base_offset, 8).toLowerCase();
+            }
+            if (!ss.hasOwnProperty(sys_id)) {
+                ss[sys_id] = {};
+            }
+
+            ss[sys_id].voltage_battery = Buffer.from(voltage_battery, 'hex').readUInt16LE(0);
         }
 
         else if (msg_id == mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
