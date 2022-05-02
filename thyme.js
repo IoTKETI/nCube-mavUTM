@@ -29,7 +29,7 @@ global.mqtt_client = null;
 global.conf = {};
 
 conf.cse = {};
-conf.cse.host = '203.253.128.177'; //'150.197.3.100'; //'203.253.128.161';
+conf.cse.host = 'gcs.iotocean.org'; //'muv.iotocean.org';
 conf.cse.port = 7579;
 conf.cse.mqttport = 1883;
 conf.usesecure = 'disable';
@@ -39,17 +39,16 @@ conf.gcs_sys_id = 255;
 // AE core
 conf.aei = "SgMavUTM"
 
-conf.gcs = 'KETI_MUV';
+conf.gcs = 'KETI_GCS';  // 'KETI_MUV';
 
 conf.drone = [];
 
-global.drone_info_file = 'LTE_seoul.json'; //'rkah_1_route.json';
+global.drone_info_file = 'drone_info.json'; //'rkah_1_route.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
-}
-catch (e) {
-    var info = {};
+} catch (e) {
+    var info;
 
     info = {};
     info.name = 'KETI_Air_01';
@@ -63,8 +62,8 @@ catch (e) {
     fs.writeFileSync(drone_info_file, JSON.stringify(conf.drone, null, 4), 'utf8');
 }
 
-conf.auto_landing_gear = 'enable';
-conf.auto_led = 'enable';
+conf.auto_landing_gear = 'disable';  // 'enable'; // 'disable';
+conf.auto_led = 'disable';  // 'enable'; // 'disable';
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
@@ -72,8 +71,7 @@ conf.use_terminal = 'enable'; //'enable';
 
 if (conf.use_terminal === 'enable') {
     require('./terminal_app');
-}
-else {
+} else {
     require('./http_app');
 }
 
