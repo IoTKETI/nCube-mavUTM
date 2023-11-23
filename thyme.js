@@ -12,7 +12,7 @@
  * Created by Il Yeup, Ahn in KETI on 2016-08-19.
  */
 
-var fs = require('fs');
+const fs = require('fs');
 
 global.resp_mqtt_ri_arr = [];
 
@@ -24,7 +24,7 @@ global.socket_q = {};
 //global.sh_state = 'rtvae';
 global.sh_state = 'crtae';
 
-global.mqtt_client = null;
+global.mobius_mqtt_client = null;
 
 global.conf = {};
 
@@ -47,7 +47,8 @@ global.drone_info_file = 'drone_info.json'; //'rkah_1_route.json';
 
 try {
     conf.drone = JSON.parse(fs.readFileSync(drone_info_file, 'utf8'));
-} catch (e) {
+}
+catch (e) {
     var info;
 
     info = {};
@@ -67,11 +68,12 @@ conf.auto_led = 'disable';  // 'enable'; // 'disable';
 
 conf.running_type = 'local';        // 'local' or 'global' : When this is worked in Server, select 'global'
 
-conf.use_terminal = 'enable'; //'enable';
+conf.use_terminal = 'disable'; //'enable';
 
 if (conf.use_terminal === 'enable') {
     require('./terminal_app');
-} else {
+}
+else {
     require('./http_app');
 }
 

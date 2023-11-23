@@ -1,81 +1,72 @@
 require('./http_app');
-var fs = require('fs');
+const fs = require('fs');
 
-var mavlink = require('./mavlibrary/mavlink.js');
+const mavlink = require('./mavlibrary/mavlink.js');
 
-var term = require('terminal-kit').terminal;
+const term = require('terminal-kit').terminal;
 
-var command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'RTL', 'Auto_Mission', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY','Follow', 'Params', 'Real_Control'];
-var cur_command_items = [];
+let command_items = ['Back', 'Arm', 'Mode', 'Takeoff', 'GoTo', 'GoTo_Alt', 'GoTo_Circle', 'Hold', 'Change_Speed', 'Land', 'RTL', 'Auto_Mission', 'Start_Mission', 'SET_ROI', 'SET_SERVO', 'SET_RELAY', 'Follow', 'Params', 'Real_Control'];
+let cur_command_items = [];
 
-var params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_ATC_SLEW_YAW', 'set_ACRO_YAW_P', 'set_WPNAV_RADIUS', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO_Param', 'set_SYSID_THISMAV', 'Reboot',
+let params_items = ['Back', 'set_WP_YAW_BEHAVIOR', 'set_WPNAV_SPEED', 'set_WPNAV_SPEED_DN', 'set_ATC_SLEW_YAW', 'set_ACRO_YAW_P', 'set_WPNAV_RADIUS', 'set_CIRCLE_RADIUS', 'set_CIRCLE_RATE', 'set_SERVO_Param', 'set_SYSID_THISMAV', 'Reboot',
     'get_Joystick_Params'];
 
-var follow_items = ['Back', 'set_Follow_Params', 'set_Follow'];
+let follow_items = ['Back', 'set_Follow_Params', 'set_Follow'];
 
-var follow_params_items = ['cancel', '11:10:0:0:10:5', '11:10:10:10:10:5', '11:10:-10:10:10:5'];
+let follow_params_items = ['cancel', '11:10:0:0:10:5', '11:10:10:10:10:5', '11:10:-10:10:10:5'];
 
 const jostick_params = ['RC1_MAX', 'RC1_MIN', 'RC1_TRIM', 'RC2_MAX', 'RC2_MIN', 'RC2_TRIM', 'RC3_MAX', 'RC3_MIN', 'RC3_TRIM', 'RC4_MAX', 'RC4_MIN', 'RC4_TRIM']
 
-var alt_items = ['cancel', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150'];
+let alt_items = ['cancel', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150'];
 
-var interest_items = ['cancel', '37.2724709:127.3633033:35'];
+let interest_items = ['cancel', '37.2724709:127.3633033:35'];
 
-var speed_items = ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+let speed_items = ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
-var radius_items = ['cancel', '5', '10', '15', '20', '25', '30', '50', '100', '200', '500', '1000', '2000'];
+let radius_items = ['cancel', '5', '10', '15', '20', '25', '30', '50', '100', '200', '500', '1000', '2000'];
 
-var id_items = ['cancel', 'random', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150', '160'];
+let id_items = ['cancel', 'random', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '120', '130', '140', '150', '160'];
 
-var auto_items = ['cancel', '1', '1:3', '2:5', '3:6', '3'];
+let auto_items = ['cancel', '1', '1:3', '2:5', '3:6', '3'];
 
-var options = {
-    y: 1,	// the menu will be on the top of the terminal
-    style: term.inverse,
-    selectedStyle: term.dim.blue.bgGreen
-};
+let history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let takeoff_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let goto_alt_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let roi_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let servo_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let relay_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let mission_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let wpnav_speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let wpnav_speed_dn_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let atc_slew_yaw_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let acro_yaw_p_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let wpnav_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let circle_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let circle_rate_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let servo_param_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let sysid_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let follow_params_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
+let auto_history = ['1', '1:3', '2:5', '3:6', '3'];
 
-
-var history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var takeoff_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var goto_alt_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var roi_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var servo_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var relay_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var mission_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var wpnav_speed_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var wpnav_speed_dn_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var atc_slew_yaw_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var acro_yaw_p_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var wpnav_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var circle_radius_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var circle_rate_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var servo_param_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var sysid_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var follow_params_history = ['John', 'Jack', 'Joey', 'Billy', 'Bob'];
-var auto_history = ['1', '1:3', '2:5', '3:6', '3'];
-
-var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
+const mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
     'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'DRIFT', 'RESERVED_12', 'SPORT',
     'FLIP', 'AUTOTUNE', 'POS_HOLD', 'BRAKE', 'THROW', 'AVOID_ADSB', 'GUIDED_NOGPS', 'SAFE_RTL'];
-// var mode_items = ['cancel', 'STABILIZE', 'ACRO', 'ALT_HOLD', 'AUTO', 'GUIDED', 'LOITER',
-//     'RTL', 'CIRCLE', 'POSITION', 'LAND', 'OF_LOITER', 'AUTOTUNE', 'POS_HOLD', 'SAFE_RTL'];
 
-var goto_position = {};
-var goto_all_position = [];
-var target_pub_topic = {};
+let goto_position = {};
+let goto_all_position = [];
+let target_pub_topic = {};
 
-var drone_items = [];
+let drone_items = [];
 drone_items.push('Quit');
-var target_system_id = {};
-var goto_all_index = {};
-var goto_all_seq = 0;
+let target_system_id = {};
+let goto_all_index = {};
+let goto_all_seq = 0;
 
-var follow_mode = {};
-var goto_position_selected = [];
+let follow_mode = {};
+let goto_position_selected = [];
 
-for (var idx in conf.drone) {
+for (let idx in conf.drone) {
     if (conf.drone.hasOwnProperty(idx)) {
         drone_items.push(conf.drone[idx].name);
         goto_position[conf.drone[idx].name] = [];
@@ -107,42 +98,35 @@ for (var idx in conf.drone) {
         follow_mode[conf.drone[idx].system_id].foll_ofs_z = 10;
         follow_mode[conf.drone[idx].system_id].foll_pos_p = 5;
 
-        target_pub_topic[conf.drone[idx].name] = '/Mobius/' + conf.gcs + '/GCS_Data/' + conf.drone[idx].name;
+        target_pub_topic[conf.drone[idx].name] = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
     }
 }
 drone_items.push('All');
 
 term.clear();
 
-var startMenuDroneSelected = 'none';
-var cur_goto_position = 'none';
-var cur_mode_selected = 'none';
+let startMenuDroneSelected = 'none';
+let cur_goto_position = 'none';
+let cur_mode_selected = 'none';
 
 const back_menu_delay = 100;
 
-function sFact(num) {
-    var rval = 1;
-    for (var i = 2; i <= num; i++)
-        rval = rval * i;
-    return rval;
-}
+let cur_drone_list_selected = [];
 
-var cur_drone_list_selected = [];
-
-var startMenuIndex = 0;
+let startMenuIndex = 0;
 
 function startMenu() {
     placeFlag = 'startMenu';
     printFlag = 'enable';
 
-    var _options = {
+    let _options = {
         y: 1,	// the menu will be on the top of the terminal
         style: term.inverse,
         selectedStyle: term.dim.yellow.bgGray,
         selectedIndex: startMenuIndex
     };
 
-    term.singleLineMenu(drone_items, _options, function (error, response) {
+    term.singleLineMenu(drone_items, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -168,7 +152,7 @@ function startMenu() {
             process.exit();
         }
         else {
-            cur_drone_list_selected = [].concat(conf.drone[startMenuIndex-1]);
+            cur_drone_list_selected = [].concat(conf.drone[startMenuIndex - 1]);
         }
 
         term('\n').eraseDisplayBelow();
@@ -177,20 +161,20 @@ function startMenu() {
     });
 }
 
-var curAllMenuIndex = 0;
+let curAllMenuIndex = 0;
 
 function allMenu() {
     placeFlag = 'allMenu';
     printFlag = 'enable';
 
-    var _options = {
+    let _options = {
         y: 1,	// the menu will be on the top of the terminal
         style: term.inverse,
         selectedStyle: term.dim.blue.bgGreen,
         selectedIndex: curAllMenuIndex
     };
 
-    term.singleLineMenu(cur_command_items, _options, function (error, response) {
+    term.singleLineMenu(cur_command_items, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -207,7 +191,7 @@ function allMenu() {
             cur_drone_list_selected = [].concat(conf.drone);
         }
         else {
-            cur_drone_list_selected = [].concat(conf.drone[startMenuIndex-1]);
+            cur_drone_list_selected = [].concat(conf.drone[startMenuIndex - 1]);
         }
 
         if (response.selectedText === 'Back') {
@@ -280,11 +264,11 @@ function allArmMenu() {
     term.eraseDisplayBelow();
     term.moveTo.red(1, conf.drone.length + 3, '');
 
-    var command_delay = 0;
+    let command_delay = 0;
     column_count = 3;
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
 
             command_delay++;
 
@@ -304,11 +288,11 @@ function allModeMenu() {
     term.eraseDisplayBelow();
     term('Select Mode : ');
 
-    var _options = {
+    let _options = {
         selectedIndex: 0
     };
 
-    term.singleColumnMenu(mode_items, _options, function (error, response) {
+    term.singleColumnMenu(mode_items, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -320,7 +304,7 @@ function allModeMenu() {
         printFlag = 'enable';
         term.eraseDisplayBelow();
 
-        var input = response.selectedText;
+        let input = response.selectedText;
         if (input === 'cancel') {
             setTimeout(allMenu, back_menu_delay);
         }
@@ -329,16 +313,16 @@ function allModeMenu() {
             // history.push(input);
             // history.shift();
 
-            var custom_mode = mode_items.indexOf(cur_mode_selected) - 1;
-            var command_delay = 0;
+            let custom_mode = mode_items.indexOf(cur_mode_selected) - 1;
+            let command_delay = 0;
             column_count = 3;
-            for (var idx in cur_drone_list_selected) {
+            for (let idx in cur_drone_list_selected) {
                 if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                    var drone_selected = cur_drone_list_selected[idx].name;
+                    let drone_selected = cur_drone_list_selected[idx].name;
 
                     command_delay++;
 
-                    var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                    let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                     base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                     setTimeout(send_set_mode_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
                 }
@@ -357,8 +341,7 @@ function allTakeoffMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Height : ');
 
     term.inputField(
-        {history: takeoff_history, autoComplete: alt_items, autoCompleteMenu: true},
-        function (error, input) {
+        {history: takeoff_history, autoComplete: alt_items, autoCompleteMenu: true}, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -373,27 +356,28 @@ function allTakeoffMenu() {
                 takeoff_history.push(input);
                 takeoff_history.shift();
 
-                var arr_input = input.split(':');
+                let arr_input = input.split(':');
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                for (var idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
                         follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
                         setTimeout(send_arm_command, 500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
 
-                        if(arr_input.hasOwnProperty(idx)) {
-                            var alt = parseFloat(arr_input[idx]);
+                        let alt;
+                        if (arr_input.hasOwnProperty(idx)) {
+                            alt = parseFloat(arr_input[idx]);
                             if (alt < 2.0) {
                                 alt = 2.0;
                             }
@@ -405,21 +389,22 @@ function allTakeoffMenu() {
                         setTimeout(send_takeoff_command, 6500 + 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], alt);
                     }
                 }
-                setTimeout(allMenu, 7500 + 50 * (command_delay +1));
+                setTimeout(allMenu, 7500 + 50 * (command_delay + 1));
             }
         }
     );
 }
 
-var cur_goto_position_selected = {};
+let cur_goto_position_selected = {};
+
 function actionAllGoto(input) {
     cur_goto_position = input;
-    var arr_goto_all_position = cur_goto_position.split('|');
+    let arr_goto_all_position = cur_goto_position.split('|');
 
-    var command_delay = 0;
-    for (var idx in cur_drone_list_selected) {
+    let command_delay = 0;
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
             cur_goto_position_selected[drone_selected] = arr_goto_all_position[idx];
             cur_goto_position = arr_goto_all_position[idx];
             command_delay++;
@@ -427,16 +412,16 @@ function actionAllGoto(input) {
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
             // set GUIDED Mode
-            var custom_mode = 4;
-            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+            let custom_mode = 4;
+            let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-            var arr_cur_goto_position = cur_goto_position.split(':');
-            var lat = parseFloat(arr_cur_goto_position[0]);
-            var lon = parseFloat(arr_cur_goto_position[1]);
-            var alt = parseFloat(arr_cur_goto_position[2]);
-            var speed = parseFloat(arr_cur_goto_position[3]);
+            let arr_cur_goto_position = cur_goto_position.split(':');
+            let lat = parseFloat(arr_cur_goto_position[0]);
+            let lon = parseFloat(arr_cur_goto_position[1]);
+            let alt = parseFloat(arr_cur_goto_position[2]);
+            let speed = parseFloat(arr_cur_goto_position[3]);
 
             setTimeout(send_goto_command, 50 + 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], lat, lon, alt);
 
@@ -447,33 +432,34 @@ function actionAllGoto(input) {
 
 function actionAllGotoCircle(input) {
     cur_goto_position = input;
-    var arr_goto_all_position = cur_goto_position.split('|');
+    let arr_goto_all_position = cur_goto_position.split('|');
 
-    var command_delay = 0;
-    for (var idx in cur_drone_list_selected) {
+    let command_delay = 0;
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
             cur_goto_position_selected[drone_selected] = arr_goto_all_position[idx];
             cur_goto_position = arr_goto_all_position[idx];
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-            var arr_cur_goto_position = cur_goto_position.split(':');
-            var lat = parseFloat(arr_cur_goto_position[0]);
-            var lon = parseFloat(arr_cur_goto_position[1]);
-            var alt = parseFloat(arr_cur_goto_position[2]);
-            var speed = parseFloat(arr_cur_goto_position[3]);
-
-            if(arr_cur_goto_position.hasOwnProperty('4')) {
-                var radius = parseFloat(arr_cur_goto_position[4]);
+            let arr_cur_goto_position = cur_goto_position.split(':');
+            let lat = parseFloat(arr_cur_goto_position[0]);
+            let lon = parseFloat(arr_cur_goto_position[1]);
+            let alt = parseFloat(arr_cur_goto_position[2]);
+            let speed = parseFloat(arr_cur_goto_position[3]);
+            let radius;
+            let circle_speed;
+            if (arr_cur_goto_position.hasOwnProperty('4')) {
+                radius = parseFloat(arr_cur_goto_position[4]);
             }
             else { // default radius
                 radius = 20;
             }
 
-            if(arr_cur_goto_position.hasOwnProperty('5')) {
-                var circle_speed = parseFloat(arr_cur_goto_position[5]);
+            if (arr_cur_goto_position.hasOwnProperty('5')) {
+                circle_speed = parseFloat(arr_cur_goto_position[5]);
             }
             else {
                 circle_speed = speed;
@@ -481,12 +467,12 @@ function actionAllGotoCircle(input) {
 
             setTimeout(send_circle_radius_param_set_command, 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], radius);
 
-            var degree_speed = parseInt((circle_speed / radius) * (180 / 3.14), 10);
+            let degree_speed = parseInt((circle_speed / radius) * (180 / 3.14), 10);
             setTimeout(send_circle_rate_param_set_command, 200 + 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], degree_speed);
 
             // set GUIDED Mode
-            var custom_mode = 4;
-            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+            let custom_mode = 4;
+            let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, 400 + 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
@@ -495,7 +481,7 @@ function actionAllGotoCircle(input) {
     }
 }
 
-var curAllGotoIndex = 0;
+let curAllGotoIndex = 0;
 
 function allGotoMenu() {
     placeFlag = 'allGotoMenu';
@@ -505,16 +491,16 @@ function allGotoMenu() {
     term.eraseDisplayBelow();
     term('Select Position : ');
 
-    var _options = {
+    let _options = {
         selectedIndex: curAllGotoIndex
     };
 
     goto_all_position = [];
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            for (var i in cur_drone_list_selected[idx].goto_position) {
+            for (let i in cur_drone_list_selected[idx].goto_position) {
                 if (cur_drone_list_selected[idx].goto_position.hasOwnProperty(i)) {
-                    if (goto_all_position[i] == undefined) {
+                    if (!goto_all_position[i]) {
                         goto_all_position[i] = '';
                     }
                     goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
@@ -524,7 +510,7 @@ function allGotoMenu() {
         }
     }
 
-    term.singleColumnMenu(goto_all_position, _options, function (error, response) {
+    term.singleColumnMenu(goto_all_position, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -537,7 +523,7 @@ function allGotoMenu() {
         term.eraseDisplayBelow();
 
         curAllGotoIndex = response.selectedIndex;
-        var input = response.selectedText;
+        let input = response.selectedText;
         if (input.split('|')[0] === 'cancel') {
             setTimeout(allMenu, back_menu_delay);
         }
@@ -561,8 +547,7 @@ function allGotoAltMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Altitude : ');
 
     term.inputField(
-        {history: goto_alt_history, autoComplete: alt_items, autoCompleteMenu: true},
-        function (error, input) {
+        {history: goto_alt_history, autoComplete: alt_items, autoCompleteMenu: true}, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -577,25 +562,26 @@ function allGotoAltMenu() {
                 goto_alt_history.push(input);
                 goto_alt_history.shift();
 
-                var arr_input = input.split(':');
+                let arr_input = input.split(':');
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                for (var idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
                         follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, 50 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-                        if(arr_input.hasOwnProperty(idx)) {
-                            var alt = parseFloat(arr_input[idx]);
+                        let alt;
+                        if (arr_input.hasOwnProperty(idx)) {
+                            alt = parseFloat(arr_input[idx]);
                         }
                         else {
                             alt = parseFloat(arr_input[0]);
@@ -611,8 +597,7 @@ function allGotoAltMenu() {
     );
 }
 
-
-var curAllGotoCircleIndex = 0;
+let curAllGotoCircleIndex = 0;
 
 function allGotoCircleMenu() {
     placeFlag = 'allGotoCircleMenu';
@@ -622,16 +607,16 @@ function allGotoCircleMenu() {
     term.eraseDisplayBelow();
     term('Select Position : ');
 
-    var _options = {
+    let _options = {
         selectedIndex: curAllGotoCircleIndex
     };
 
     goto_all_position = [];
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            for (var i in cur_drone_list_selected[idx].goto_position) {
+            for (let i in cur_drone_list_selected[idx].goto_position) {
                 if (cur_drone_list_selected[idx].goto_position.hasOwnProperty(i)) {
-                    if (goto_all_position[i] == undefined) {
+                    if (!goto_all_position[i]) {
                         goto_all_position[i] = '';
                     }
                     goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
@@ -640,7 +625,7 @@ function allGotoCircleMenu() {
         }
     }
 
-    term.singleColumnMenu(goto_all_position, _options, function (error, response) {
+    term.singleColumnMenu(goto_all_position, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -653,7 +638,7 @@ function allGotoCircleMenu() {
         term.eraseDisplayBelow();
 
         curAllGotoCircleIndex = response.selectedIndex;
-        var input = response.selectedText;
+        let input = response.selectedText;
         if (input.split('|')[0] === 'cancel') {
             setTimeout(allMenu, back_menu_delay);
         }
@@ -678,8 +663,7 @@ function allChangeSpeedMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Speed (1 - 12 (m/s)): ');
 
     term.inputField(
-        {history: speed_history, autoComplete: speed_items, autoCompleteMenu: true},
-        function (error, input) {
+        {history: speed_history, autoComplete: speed_items, autoCompleteMenu: true}, (error, input) => {
             term('\n').eraseLineAfter.green(
                 "%s selected\n",
                 input
@@ -694,7 +678,7 @@ function allChangeSpeedMenu() {
                 speed_history.push(input);
                 speed_history.shift();
 
-                var speed = parseFloat(input);
+                let speed = parseFloat(input);
 
                 if (speed > 12.0) {
                     speed = 12.0;
@@ -704,26 +688,26 @@ function allChangeSpeedMenu() {
                     speed = 1.0
                 }
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                var max_gap = 0;
-                for (var idx in cur_drone_list_selected) {
+                let max_gap = 0;
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         send_set_mode_command(drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-                        var cur_speed = Math.abs(Math.sqrt((gpi[target_system_id[drone_selected]].vx / 100) * (gpi[target_system_id[drone_selected]].vx / 100) + (gpi[target_system_id[drone_selected]].vy / 100) * (gpi[target_system_id[drone_selected]].vy / 100)));
+                        let cur_speed = Math.abs(Math.sqrt((gpi[target_system_id[drone_selected]].vx / 100) * (gpi[target_system_id[drone_selected]].vx / 100) + (gpi[target_system_id[drone_selected]].vy / 100) * (gpi[target_system_id[drone_selected]].vy / 100)));
                         cur_speed = Math.round(cur_speed);
-                        var gap_count = 0;
+                        let gap_count = 0;
                         if (cur_speed > speed) {
                             gap_count = 0;
-                            for (var i = cur_speed - 1; i > speed; i--) {
+                            for (let i = cur_speed - 1; i > speed; i--) {
                                 setTimeout(send_change_speed_command, back_menu_delay * command_delay + (unit_gap * gap_count), drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], i);
                                 gap_count++;
                             }
@@ -731,7 +715,7 @@ function allChangeSpeedMenu() {
                         }
                         else if (cur_speed < speed) {
                             gap_count = 0;
-                            for (i = cur_speed + 1; i < speed; i++) {
+                            for (let i = cur_speed + 1; i < speed; i++) {
                                 setTimeout(send_change_speed_command, back_menu_delay * command_delay + (unit_gap * gap_count), drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], i);
                                 gap_count++;
                             }
@@ -758,24 +742,21 @@ function allHoldMenu() {
     term.eraseDisplayBelow();
     term.moveTo.red(1, conf.drone.length + 3, '');
 
-    var command_delay = 0;
+    let command_delay = 0;
     column_count = 3;
-    for (idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
 
             command_delay++;
 
             follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-            // // set BRAKE Mode
-            // var custom_mode = 17;
-            // set POS_HOLD Mode
-            var custom_mode = 16;
-            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+            let custom_mode = 16;
+            let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
-       }
+        }
     }
 
     setTimeout(allMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
@@ -785,11 +766,11 @@ function allLandMenu() {
     term.eraseDisplayBelow();
     term.moveTo.red(1, conf.drone.length + 3, '');
 
-    var command_delay = 0;
+    let command_delay = 0;
     column_count = 3;
-    for (idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
 
             command_delay++;
             setTimeout(send_land_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
@@ -803,11 +784,11 @@ function allRTLMenu() {
     term.eraseDisplayBelow();
     term.moveTo.red(1, conf.drone.length + 3, '');
 
-    var command_delay = 0;
+    let command_delay = 0;
     column_count = 3;
-    for (idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
 
             command_delay++;
             setTimeout(send_rtl_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected]);
@@ -817,7 +798,7 @@ function allRTLMenu() {
     setTimeout(allMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
 }
 
-var key = '';
+let key = '';
 const map = new Map();
 map.set('w', 'throttle_high');
 map.set('a', 'yaw_left');
@@ -839,7 +820,7 @@ const gap = 16;
 
 term.grabInput();
 
-term.on('key', function (name, matches, data) {
+term.on('key', (name) => {
     //console.log( "'key' event:" , name ) ;
 
     key = name;
@@ -853,49 +834,52 @@ term.on('key', function (name, matches, data) {
         if (map.has(name)) {
             const command = map.get(name);
 
-            if(command === 'loiter') {
-                var command_delay = 0;
+            let command_delay;
+            let custom_mode;
+
+            if (command === 'loiter') {
+                command_delay = 0;
                 column_count = conf.drone.length + conf.drone.length + 14;
-                var custom_mode = 5; // LOITER Mode
-                for (var idx in cur_drone_list_selected) {
+                custom_mode = 5; // LOITER Mode
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                        setTimeout(send_set_mode_command, command_delay*10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+                        setTimeout(send_set_mode_command, command_delay * 10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
                     }
                 }
             }
-            else if(command === 'alt_hold') {
+            else if (command === 'alt_hold') {
                 command_delay = 0;
                 column_count = conf.drone.length + conf.drone.length + 14;
                 custom_mode = 2; // ALT_HOLD Mode
-                for (idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
-                        base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-                        setTimeout(send_set_mode_command, command_delay*10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
+                        setTimeout(send_set_mode_command, command_delay * 10, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
                     }
                 }
             }
             else if (command === 'throttle_low') {
                 throttle_offset += gap;
-                if (throttle_offset >= (MAX_OFFSET*2)) {
-                    throttle_offset = (MAX_OFFSET*2);
+                if (throttle_offset >= (MAX_OFFSET * 2)) {
+                    throttle_offset = (MAX_OFFSET * 2);
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
             else if (command === 'throttle_high') {
                 throttle_offset -= gap;
-                if (throttle_offset <= -(MAX_OFFSET*2)) {
-                    throttle_offset = -(MAX_OFFSET*2);
+                if (throttle_offset <= -(MAX_OFFSET * 2)) {
+                    throttle_offset = -(MAX_OFFSET * 2);
                 }
                 // term.moveTo.eraseLine.cyan(1, conf.drone.length + 13, 'throttle: ' + throttle_offset);
             }
@@ -951,63 +935,63 @@ term.on('key', function (name, matches, data) {
     }
 });
 
-var keytimeout = setTimeout(key_release, 250);
+let keytimeout = setTimeout(key_release, 250);
 
 function key_release() {
     if (placeFlag === 'eachRealControlMenu') {
         if (throttle_offset > 0) {
-            throttle_offset -= (gap*4);
+            throttle_offset -= (gap * 4);
             if (throttle_offset < 0) {
                 throttle_offset = 0;
             }
         }
         else if (throttle_offset < 0) {
-            throttle_offset += (gap*4);
+            throttle_offset += (gap * 4);
             if (throttle_offset > 0) {
                 throttle_offset = 0;
             }
         }
 
         if (yaw_offset > 0) {
-            yaw_offset -= (gap*4);
+            yaw_offset -= (gap * 4);
             if (yaw_offset < 0) {
                 yaw_offset = 0;
             }
         }
         else if (yaw_offset < 0) {
-            yaw_offset += (gap*4);
+            yaw_offset += (gap * 4);
             if (yaw_offset > 0) {
                 yaw_offset = 0;
             }
         }
 
         if (pitch_offset > 0) {
-            pitch_offset -= (gap*4);
+            pitch_offset -= (gap * 4);
             if (pitch_offset < 0) {
                 pitch_offset = 0;
             }
         }
         else if (pitch_offset < 0) {
-            pitch_offset += (gap*4);
+            pitch_offset += (gap * 4);
             if (pitch_offset > 0) {
                 pitch_offset = 0;
             }
         }
 
         if (roll_offset > 0) {
-            roll_offset -= (gap*4);
+            roll_offset -= (gap * 4);
             if (roll_offset < 0) {
                 roll_offset = 0;
             }
         }
         else if (roll_offset < 0) {
-            roll_offset += (gap*4);
+            roll_offset += (gap * 4);
             if (roll_offset > 0) {
                 roll_offset = 0;
             }
         }
 
-        if (roll_offset == 0 && pitch_offset == 0 && throttle_offset == 0 && yaw_offset == 0) {
+        if (roll_offset === 0 && pitch_offset === 0 && throttle_offset === 0 && yaw_offset === 0) {
         }
         else {
             setTimeout(key_release, 100);
@@ -1015,29 +999,29 @@ function key_release() {
     }
 }
 
-var ori_dist = 0;
-var cur_dist = 0;
+let ori_dist = 0;
+let cur_dist = 0;
 
 function calcAllDistance(goto_position) {
-    var dist = 0;
-    var arr_goto_all_position = goto_position.split('|');
-    for (var idx in cur_drone_list_selected) {
+    let dist = 0;
+    let arr_goto_all_position = goto_position.split('|');
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
             cur_goto_position = arr_goto_all_position[idx];
 
-            var cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
-            var cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
-            var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
+            let cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
+            let cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
+            let cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
 
-            var result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
+            let result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
 
-            var arr_cur_goto_position = cur_goto_position.split(':');
-            var tar_lat = parseFloat(arr_cur_goto_position[0]);
-            var tar_lon = parseFloat(arr_cur_goto_position[1]);
-            var tar_alt = parseFloat(arr_cur_goto_position[2]);
+            let arr_cur_goto_position = cur_goto_position.split(':');
+            let tar_lat = parseFloat(arr_cur_goto_position[0]);
+            let tar_lon = parseFloat(arr_cur_goto_position[1]);
+            let tar_alt = parseFloat(arr_cur_goto_position[2]);
 
-            var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
+            let result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
             dist += Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
         }
@@ -1046,8 +1030,8 @@ function calcAllDistance(goto_position) {
     return dist;
 }
 
-var pre_progress = 0;
-var abnormal_count = 0;
+let pre_progress = 0;
+let abnormal_count = 0;
 
 function doAllProgress(selectedIndex, input, callback) {
     if (key === 'BACKSPACE') {
@@ -1078,7 +1062,7 @@ function doAllProgress(selectedIndex, input, callback) {
                 callback('500');
             }
             else {
-                setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+                setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, (code) => {
                     callback(code);
                 });
             }
@@ -1086,7 +1070,7 @@ function doAllProgress(selectedIndex, input, callback) {
         else {
             pre_progress = progress;
             cur_dist = 0;
-            setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, function (code) {
+            setTimeout(doAllProgress, 100 + Math.random() * 400, selectedIndex, input, (code) => {
                 callback(code);
             });
         }
@@ -1106,7 +1090,7 @@ function actionAllProgressBar(selectedIndex, input) {
     abnormal_count = 0;
 
     progress = 0;
-    doAllProgress(selectedIndex, input, function (code) {
+    doAllProgress(selectedIndex, input, (code) => {
         if (code === '404') {
             term.moveTo.eraseDisplayBelow.red(1, conf.drone.length + column_count, 'Canceled\n');
             setTimeout(allMenu, back_menu_delay + back_menu_delay * (cur_drone_list_selected.length + 1));
@@ -1129,12 +1113,12 @@ function actionAllProgressBar(selectedIndex, input) {
 }
 
 
-var progress = 0;
-var progressBar = null;
+let progress = 0;
+let progressBar = null;
 
 function actionAllAutoGoto(selectedGotoIndex) {
     curAllAutoGotoIndex = selectedGotoIndex;
-    var input = goto_all_position[selectedGotoIndex];
+    let input = goto_all_position[selectedGotoIndex];
 
     term('\n').moveTo.eraseLineAfter.green(1, conf.drone.length + 3, "%d : %s\n", selectedGotoIndex, input);
 
@@ -1144,34 +1128,36 @@ function actionAllAutoGoto(selectedGotoIndex) {
     setTimeout(actionAllProgressBar, 1000 + back_menu_delay * (cur_drone_list_selected.length + 1), selectedGotoIndex, input);
 }
 
-var curAllAutoGotoIndex = 0;
+let curAllAutoGotoIndex = 0;
 
 function actionAllAuto(goto_all_position, input) {
-    var arr_auto_info = input.split(':');
-    var start_idx = parseInt(arr_auto_info[0]);
+    let arr_auto_info = input.split(':');
+    let start_idx = parseInt(arr_auto_info[0]);
 
-    if(arr_auto_info.hasOwnProperty('1')) {
-        var end_idx = parseInt(arr_auto_info[1]);
+    let end_idx;
+    if (arr_auto_info.hasOwnProperty('1')) {
+        end_idx = parseInt(arr_auto_info[1]);
     }
     else { // default end_idx is last
         end_idx = goto_all_position.length - 1;
     }
 
-    if(arr_auto_info.hasOwnProperty('2')) {
-        var delay = parseInt(arr_auto_info[2]);
+    let delay;
+    if (arr_auto_info.hasOwnProperty('2')) {
+        delay = parseInt(arr_auto_info[2]);
     }
     else { // default delay is 2 seconds
         delay = 2;
     }
 
-    var command_delay = 0;
-    for (var idx in cur_drone_list_selected) {
+    let command_delay = 0;
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
+            let drone_selected = cur_drone_list_selected[idx].name;
 
             // set GUIDED Mode
-            var custom_mode = 4;
-            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+            let custom_mode = 4;
+            let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
             setTimeout(send_set_mode_command, 400 + 15 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
@@ -1185,11 +1171,11 @@ function allAutoMenu() {
     printFlag = 'disable';
 
     goto_all_position = [];
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            for (var i in cur_drone_list_selected[idx].goto_position) {
+            for (let i in cur_drone_list_selected[idx].goto_position) {
                 if (cur_drone_list_selected[idx].goto_position.hasOwnProperty(i)) {
-                    if (goto_all_position[i] == undefined) {
+                    if (!goto_all_position[i]) {
                         goto_all_position[i] = '';
                     }
                     goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
@@ -1202,8 +1188,7 @@ function allAutoMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Mission Index ([start]:[end]:[delay]): ');
 
     term.inputField(
-        {history: auto_history, autoComplete: auto_items, autoCompleteMenu: true},
-        function (error, input) {
+        {history: auto_history, autoComplete: auto_items, autoCompleteMenu: true}, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -1235,16 +1220,16 @@ function allAutoGotoMenu() {
     term.eraseDisplayBelow();
     term('Select Start Position : ');
 
-    var _options = {
+    let _options = {
         selectedIndex: curAllAutoGotoIndex
     };
 
     goto_all_position = [];
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            for (var i in cur_drone_list_selected[idx].goto_position) {
+            for (let i in cur_drone_list_selected[idx].goto_position) {
                 if (cur_drone_list_selected[idx].goto_position.hasOwnProperty(i)) {
-                    if (goto_all_position[i] == undefined) {
+                    if (!goto_all_position[i]) {
                         goto_all_position[i] = '';
                     }
                     goto_all_position[i] += (cur_drone_list_selected[idx].goto_position[i] + '|');
@@ -1253,7 +1238,7 @@ function allAutoGotoMenu() {
         }
     }
 
-    term.singleColumnMenu(goto_all_position, _options, function (error, response) {
+    term.singleColumnMenu(goto_all_position, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -1266,7 +1251,7 @@ function allAutoGotoMenu() {
         term.eraseDisplayBelow();
 
         curAllAutoGotoIndex = response.selectedIndex;
-        var input = response.selectedText;
+        let input = response.selectedText;
         if (input.split('|')[0] === 'cancel') {
             setTimeout(allMenu, back_menu_delay);
         }
@@ -1287,8 +1272,7 @@ function allSetRoiMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Interest ([lat]:[lon]:[alt]): ');
 
     term.inputField(
-        {history: roi_history, autoComplete: interest_items, autoCompleteMenu: true},
-        function (error, input) {
+        {history: roi_history, autoComplete: interest_items, autoCompleteMenu: true}, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -1303,23 +1287,23 @@ function allSetRoiMenu() {
                 roi_history.push(input);
                 roi_history.shift();
 
-                var arr_cur_interest_lat = input.split(':');
-                var lat = parseFloat(arr_cur_interest_lat[0]);
-                var lon = parseFloat(arr_cur_interest_lat[1]);
-                var alt = parseFloat(arr_cur_interest_lat[2]);
+                let arr_cur_interest_lat = input.split(':');
+                let lat = parseFloat(arr_cur_interest_lat[0]);
+                let lon = parseFloat(arr_cur_interest_lat[1]);
+                let alt = parseFloat(arr_cur_interest_lat[2]);
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                for (var idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
                         follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
@@ -1339,8 +1323,11 @@ function allSetServoMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[PWM]): ');
 
     term.inputField(
-        {history: servo_history, autoComplete: ['cancel', '0:1500', '1:1800', '2:1000', '3:800', '4:1200', '5:1200', '6:1200', '7:1200'], autoCompleteMenu: true},
-        function (error, input) {
+        {
+            history: servo_history,
+            autoComplete: ['cancel', '0:1500', '1:1800', '2:1000', '3:800', '4:1200', '5:1200', '6:1200', '7:1200'],
+            autoCompleteMenu: true
+        }, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -1355,22 +1342,22 @@ function allSetServoMenu() {
                 servo_history.push(input);
                 servo_history.shift();
 
-                var arr_servo = input.split(':');
-                var number = parseFloat(arr_servo[0]);
-                var pwm = parseFloat(arr_servo[1]);
+                let arr_servo = input.split(':');
+                let number = parseFloat(arr_servo[0]);
+                let pwm = parseFloat(arr_servo[1]);
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                for (var idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
                         follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
@@ -1390,8 +1377,11 @@ function allSetRelayMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Number ([Number]:[val]): ');
 
     term.inputField(
-        {history: relay_history, autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1'], autoCompleteMenu: true},
-        function (error, input) {
+        {
+            history: relay_history,
+            autoComplete: ['cancel', '0:1', '1:1', '2:0', '3:0', '4:1'],
+            autoCompleteMenu: true
+        }, (error, input) => {
             term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                 "%s selected\n",
                 input
@@ -1406,22 +1396,22 @@ function allSetRelayMenu() {
                 relay_history.push(input);
                 relay_history.shift();
 
-                var arr_relay = input.split(':');
-                var number = parseFloat(arr_relay[0]);
-                var val = parseFloat(arr_relay[1]);
+                let arr_relay = input.split(':');
+                let number = parseFloat(arr_relay[0]);
+                let val = parseFloat(arr_relay[1]);
 
-                var command_delay = 0;
+                let command_delay = 0;
                 column_count = 5;
-                for (var idx in cur_drone_list_selected) {
+                for (let idx in cur_drone_list_selected) {
                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                        var drone_selected = cur_drone_list_selected[idx].name;
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
                         command_delay++;
 
                         follow_mode[target_system_id[drone_selected]].foll_enable = 0;
 
-                        var custom_mode = 4;
-                        var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                        let custom_mode = 4;
+                        let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                         setTimeout(send_set_mode_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
@@ -1441,60 +1431,65 @@ function allStartMissionMenu() {
     term.moveTo.red(1, conf.drone.length + 3, 'Select Start Number: ');
 
     term.inputField(
-    {history: mission_history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], autoCompleteMenu: true}, function (error, input) {
-        term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
-            "%s selected\n",
-            input
-        );
+        {
+            history: mission_history,
+            autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            autoCompleteMenu: true
+        }, (error, input) => {
+            term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
+                "%s selected\n",
+                input
+            );
 
-        printFlag = 'enable';
+            printFlag = 'enable';
 
-        if (input === 'cancel') {
-            setTimeout(allMenu, back_menu_delay);
-        }
-        else {
-            mission_history.push(input);
-            mission_history.shift();
+            if (input === 'cancel') {
+                setTimeout(allMenu, back_menu_delay);
+            }
+            else {
+                mission_history.push(input);
+                mission_history.shift();
 
-            var start_number = parseInt(input, 10);
+                let start_number = parseInt(input, 10);
 
-            column_count = 5;
-            var command_delay = 0;
-            for (idx in cur_drone_list_selected) {
-                if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                    var drone_selected = cur_drone_list_selected[idx].name;
+                column_count = 5;
+                let command_delay = 0;
+                for (let idx in cur_drone_list_selected) {
+                    if (cur_drone_list_selected.hasOwnProperty(idx)) {
+                        let drone_selected = cur_drone_list_selected[idx].name;
 
-                    command_delay++;
+                        command_delay++;
 
-                    if (hb.hasOwnProperty(target_system_id[drone_selected])) {
-                        if (hb[target_system_id[drone_selected]].base_mode & 0x80) {
-                            setTimeout(send_start_mission_command, 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], start_number, 10);
-                        }
-                        else {
-                            setTimeout(send_arm_command, 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
+                        if (hb.hasOwnProperty(target_system_id[drone_selected])) {
+                            if (hb[target_system_id[drone_selected]].base_mode & 0x80) {
+                                setTimeout(send_start_mission_command, 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], start_number, 10);
+                            }
+                            else {
+                                setTimeout(send_arm_command, 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], 1, 0);
 
-                            setTimeout(send_start_mission_command, 6000 + 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], start_number, 10);
+                                setTimeout(send_start_mission_command, 6000 + 20 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], start_number, 10);
+                            }
                         }
                     }
                 }
-            }
 
-            setTimeout(allMenu, 6500 + back_menu_delay * (cur_drone_list_selected.length + 1));
-        }
-    });
+                setTimeout(allMenu, 6500 + back_menu_delay * (cur_drone_list_selected.length + 1));
+            }
+        });
 }
 
 function result_all_param_get_command() {
-    for (var idx in cur_drone_list_selected) {
+    for (let idx in cur_drone_list_selected) {
         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
-            if(rc1_max.hasOwnProperty(target_system_id[drone_selected])) {
-                for (var param_idx in jostick_params) {
+            let drone_selected = cur_drone_list_selected[idx].name;
+            if (rc1_max.hasOwnProperty(target_system_id[drone_selected])) {
+                for (let param_idx in jostick_params) {
                     if (jostick_params.hasOwnProperty(param_idx)) {
-                        var target = jostick_params[param_idx];
+                        let target = jostick_params[param_idx];
 
+                        let cur_param_value;
                         if (target === 'RC1_MAX') {
-                            var cur_param_value = rc1_max[target_system_id[drone_selected]].param_value;
+                            cur_param_value = rc1_max[target_system_id[drone_selected]].param_value;
                         }
                         else if (target === 'RC1_MIN') {
                             cur_param_value = rc1_min[target_system_id[drone_selected]].param_value;
@@ -1540,17 +1535,17 @@ function result_all_param_get_command() {
     setTimeout(allParamsMenu, back_menu_delay * (cur_drone_list_selected.length + 1));
 }
 
-var curAllParamsMenuIndex = 0;
+let curAllParamsMenuIndex = 0;
 
 function allParamsMenu() {
-    var _options = {
+    let _options = {
         y: 1,	// the menu will be on the top of the terminal
         style: term.inverse,
         selectedStyle: term.dim.white.bgBlue,
         selectedIndex: curAllParamsMenuIndex
     };
 
-    term.singleLineMenu(params_items, _options, function (error, response) {
+    term.singleLineMenu(params_items, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -1570,7 +1565,7 @@ function allParamsMenu() {
             term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select Value: ');
             term.eraseDisplayBelow();
 
-            term.singleColumnMenu(['cancel', '0: Never change yaw', '1: Face next waypoint', '2: Face next waypoint except RTL', '3: Face along GPS course'], function (error, response) {
+            term.singleColumnMenu(['cancel', '0: Never change yaw', '1: Face next waypoint', '2: Face next waypoint except RTL', '3: Face along GPS course'], (error, response) => {
                 term('\n').moveTo.eraseDisplayBelow.green(1, conf.drone.length + 4,
                     "#%s selected: %s (%s,%s)\n",
                     response.selectedIndex,
@@ -1579,7 +1574,7 @@ function allParamsMenu() {
                     response.y
                 );
 
-                var input = response.selectedText;
+                let input = response.selectedText;
                 if (input === 'cancel') {
                     setTimeout(allParamsMenu, back_menu_delay);
                 }
@@ -1587,7 +1582,7 @@ function allParamsMenu() {
                     // history.push(input);
                     // history.shift();
 
-                    var param_value = parseInt(response.selectedIndex, 10) - 1;
+                    let param_value = parseInt(response.selectedIndex, 10) - 1;
 
                     if (param_value > 3) {
                         param_value = 3;
@@ -1601,10 +1596,10 @@ function allParamsMenu() {
 
                     column_count = 5;
 
-                    var command_delay = 0;
-                    for (var idx in cur_drone_list_selected) {
+                    let command_delay = 0;
+                    for (let idx in cur_drone_list_selected) {
                         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                            var drone_selected = cur_drone_list_selected[idx].name;
+                            let drone_selected = cur_drone_list_selected[idx].name;
 
                             command_delay++;
 
@@ -1625,8 +1620,7 @@ function allParamsMenu() {
             term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select Speed (1 - 12 (m/s)): ');
 
             term.inputField(
-                {history: wpnav_speed_history, autoComplete: speed_items, autoCompleteMenu: true},
-                function (error, input) {
+                {history: wpnav_speed_history, autoComplete: speed_items, autoCompleteMenu: true}, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1639,7 +1633,7 @@ function allParamsMenu() {
                         wpnav_speed_history.push(input);
                         wpnav_speed_history.shift();
 
-                        var speed = parseFloat(input);
+                        let speed = parseFloat(input);
 
                         if (speed > 12.0) {
                             speed = 12.0;
@@ -1651,10 +1645,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1676,8 +1670,11 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: wpnav_speed_dn_history, autoComplete: speed_items, autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: wpnav_speed_dn_history,
+                    autoComplete: speed_items,
+                    autoCompleteMenu: true
+                }, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1690,7 +1687,7 @@ function allParamsMenu() {
                         wpnav_speed_dn_history.push(input);
                         wpnav_speed_dn_history.shift();
 
-                        var speed = parseFloat(input);
+                        let speed = parseFloat(input);
 
                         if (speed > 12.0) {
                             speed = 12.0;
@@ -1702,10 +1699,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1727,8 +1724,12 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: atc_slew_yaw_history, autoComplete: ['cancel', '5', '10', '15', '20', '25', '50', '100', '180'], autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: atc_slew_yaw_history,
+                    autoComplete: ['cancel', '5', '10', '15', '20', '25', '50', '100', '180'],
+                    autoCompleteMenu: true
+                },
+                (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1741,7 +1742,7 @@ function allParamsMenu() {
                         atc_slew_yaw_history.push(input);
                         atc_slew_yaw_history.shift();
 
-                        var yaw_speed = parseFloat(input);
+                        let yaw_speed = parseFloat(input);
 
                         if (yaw_speed > 180) {
                             yaw_speed = 180;
@@ -1753,10 +1754,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1778,8 +1779,11 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: acro_yaw_p_history, autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: acro_yaw_p_history,
+                    autoComplete: ['cancel', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                    autoCompleteMenu: true
+                }, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1792,7 +1796,7 @@ function allParamsMenu() {
                         acro_yaw_p_history.push(input);
                         acro_yaw_p_history.shift();
 
-                        var gain = parseFloat(input);
+                        let gain = parseFloat(input);
 
                         if (gain > 10.0) {
                             gain = 10.0;
@@ -1804,10 +1808,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1829,8 +1833,11 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: wpnav_radius_history, autoComplete: ['cancel', '50', '100', '150', '200', '250', '300'], autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: wpnav_radius_history,
+                    autoComplete: ['cancel', '50', '100', '150', '200', '250', '300'],
+                    autoCompleteMenu: true
+                }, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1843,7 +1850,7 @@ function allParamsMenu() {
                         wpnav_radius_history.push(input);
                         wpnav_radius_history.shift();
 
-                        var r = parseFloat(input);
+                        let r = parseFloat(input);
 
                         if (r > 1000.0) {
                             r = 1000.0;
@@ -1855,10 +1862,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1880,8 +1887,11 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: circle_radius_history, autoComplete: radius_items, autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: circle_radius_history,
+                    autoComplete: radius_items,
+                    autoCompleteMenu: true
+                }, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1894,7 +1904,7 @@ function allParamsMenu() {
                         circle_radius_history.push(input);
                         circle_radius_history.shift();
 
-                        var radius = parseFloat(input);
+                        let radius = parseFloat(input);
 
                         if (radius > 2000.0) {
                             radius = 2000.0;
@@ -1906,10 +1916,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1931,8 +1941,7 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: circle_rate_history, autoComplete: speed_items, autoCompleteMenu: true},
-                function (error, input) {
+                {history: circle_rate_history, autoComplete: speed_items, autoCompleteMenu: true}, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1945,7 +1954,7 @@ function allParamsMenu() {
                         circle_rate_history.push(input);
                         circle_rate_history.shift();
 
-                        var speed = parseFloat(input);
+                        let speed = parseFloat(input);
 
                         if (speed > 90.0) {
                             speed = 90.0;
@@ -1957,10 +1966,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -1982,8 +1991,11 @@ function allParamsMenu() {
             term.eraseDisplayBelow();
 
             term.inputField(
-                {history: servo_param_history, autoComplete: ['cancel', '9:0', '9:51', '9:52', '9:52', '9:53', '9:54', '9:55', '9:56', '9:57', '9:58', '9:59', '9:60', '9:61', '9:62', '9:63', '9:64', '9:65', '9:66'], autoCompleteMenu: true},
-                function (error, input) {
+                {
+                    history: servo_param_history,
+                    autoComplete: ['cancel', '9:0', '9:51', '9:52', '9:52', '9:53', '9:54', '9:55', '9:56', '9:57', '9:58', '9:59', '9:60', '9:61', '9:62', '9:63', '9:64', '9:65', '9:66'],
+                    autoCompleteMenu: true
+                }, (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -1997,16 +2009,16 @@ function allParamsMenu() {
                     }
                     else {
 
-                        var arr_input = input.split(':');
-                        var number = arr_input[0];
-                        var val = arr_input[1];
+                        let arr_input = input.split(':');
+                        let number = arr_input[0];
+                        let val = arr_input[1];
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -2026,7 +2038,7 @@ function allParamsMenu() {
 
             term.eraseDisplayBelow();
 
-            if(cur_drone_list_selected.length > 1) {
+            if (cur_drone_list_selected.length > 1) {
                 term('').eraseLineAfter.moveTo.red(1, conf.drone.length + 3, 'Changing sys_id here is not supported');
                 setTimeout(allParamsMenu, back_menu_delay);
             }
@@ -2034,8 +2046,7 @@ function allParamsMenu() {
                 term('').eraseLineAfter.moveTo(1, conf.drone.length + 3, 'Select id (random, 10 - 250): ');
 
                 term.inputField(
-                    {history: sysid_history, autoComplete: id_items, autoCompleteMenu: true},
-                    function (error, input) {
+                    {history: sysid_history, autoComplete: id_items, autoCompleteMenu: true}, (error, input) => {
                         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                             "%s selected\n",
                             input
@@ -2048,8 +2059,9 @@ function allParamsMenu() {
                             sysid_history.push(input);
                             sysid_history.shift();
 
+                            let id_val;
                             if (input === 'random') {
-                                var id_val = parseInt(10 + Math.random() * 250, 10);
+                                id_val = parseInt(10 + Math.random() * 250, 10);
                             }
                             else {
                                 id_val = parseInt(input, 10);
@@ -2068,16 +2080,16 @@ function allParamsMenu() {
 
                                 column_count = 5;
 
-                                var command_delay = 0;
-                                for (idx in cur_drone_list_selected) {
+                                let command_delay = 0;
+                                for (let idx in cur_drone_list_selected) {
                                     if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                        var drone_selected = cur_drone_list_selected[idx].name;
+                                        let drone_selected = cur_drone_list_selected[idx].name;
 
                                         command_delay++;
 
                                         setTimeout(send_sysid_thismav_param_set_command, back_menu_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], id_val);
 
-                                        for (var i in conf.drone) {
+                                        for (let i in conf.drone) {
                                             if (conf.drone.hasOwnProperty(i)) {
                                                 if (drone_selected === conf.drone[i].name) {
                                                     conf.drone[i].system_id = id_val;
@@ -2107,7 +2119,7 @@ function allParamsMenu() {
 
             term.inputField(
                 {history: history, autoComplete: ['cancel', 'Y', 'N'], autoCompleteMenu: true},
-                function (error, input) {
+                (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n",
                         input
@@ -2122,10 +2134,10 @@ function allParamsMenu() {
 
                         column_count = 5;
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
@@ -2146,12 +2158,12 @@ function allParamsMenu() {
 
             column_count = 3;
 
-            var command_delay = 0;
-            for (var idx in cur_drone_list_selected) {
+            let command_delay = 0;
+            for (let idx in cur_drone_list_selected) {
                 if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                    var drone_selected = cur_drone_list_selected[idx].name;
+                    let drone_selected = cur_drone_list_selected[idx].name;
 
-                    for (var param_idx in jostick_params) {
+                    for (let param_idx in jostick_params) {
                         if (jostick_params.hasOwnProperty(param_idx)) {
                             command_delay++;
                             setTimeout(send_param_get_command, back_menu_delay * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], jostick_params[param_idx]);
@@ -2170,20 +2182,20 @@ function allParamsMenu() {
     });
 }
 
-var curEachFollowMenuIndex = 0;
+let curEachFollowMenuIndex = 0;
 
 function eachFollowMenu() {
     term.eraseDisplayBelow();
     term.moveTo.red(1, conf.drone.length + 3, '');
 
-    var _options = {
+    let _options = {
         y: 1,	// the menu will be on the top of the terminal
         style: term.inverse,
         selectedStyle: term.dim.white.bgBlue,
         selectedIndex: curEachFollowMenuIndex
     };
 
-    term.singleLineMenu(follow_items, _options, function (error, response) {
+    term.singleLineMenu(follow_items, _options, (error, response) => {
         term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 2,
             "#%s selected: %s (%s,%s)\n",
             response.selectedIndex,
@@ -2206,7 +2218,7 @@ function eachFollowMenu() {
 
             term.inputField(
                 {history: follow_params_history, autoComplete: follow_params_items, autoCompleteMenu: true},
-                function (error, input) {
+                (error, input) => {
                     term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                         "%s selected\n", input);
 
@@ -2219,16 +2231,16 @@ function eachFollowMenu() {
                         follow_params_history.push(input);
                         follow_params_history.shift();
 
-                        var arr_cur_follow_params = input.split(':');
+                        let arr_cur_follow_params = input.split(':');
 
-                        var command_delay = 0;
-                        for (var idx in cur_drone_list_selected) {
+                        let command_delay = 0;
+                        for (let idx in cur_drone_list_selected) {
                             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                                var drone_selected = cur_drone_list_selected[idx].name;
+                                let drone_selected = cur_drone_list_selected[idx].name;
 
                                 command_delay++;
 
-                                if(arr_cur_follow_params[0] == target_system_id[drone_selected]) {
+                                if (arr_cur_follow_params[0] === target_system_id[drone_selected]) {
                                     term.red("target sysid for following is not same");
                                 }
                                 else {
@@ -2256,7 +2268,7 @@ function eachFollowMenu() {
             term.eraseDisplayBelow();
             term.moveTo.red(1, conf.drone.length + 3, 'Select Value: ');
 
-            term.singleColumnMenu(['cancel', '0: disable', '1: enable'], function (error, response) {
+            term.singleColumnMenu(['cancel', '0: disable', '1: enable'], (error, response) => {
                 term('\n').eraseLineAfter.moveTo.green(1, conf.drone.length + 4,
                     "#%s selected: %s (%s,%s)\n",
                     response.selectedIndex,
@@ -2267,7 +2279,7 @@ function eachFollowMenu() {
 
                 printFlag = 'enable';
 
-                var input = response.selectedText;
+                let input = response.selectedText;
                 if (input === 'cancel') {
                     setTimeout(eachFollowMenu, back_menu_delay);
                 }
@@ -2275,12 +2287,12 @@ function eachFollowMenu() {
                     // history.push(input);
                     // history.shift();
 
-                    var param_value = parseInt(response.selectedIndex, 10) - 1;
+                    let param_value = parseInt(response.selectedIndex, 10) - 1;
 
-                    var command_delay = 0;
-                    for (var idx in cur_drone_list_selected) {
+                    let command_delay = 0;
+                    for (let idx in cur_drone_list_selected) {
                         if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                            var drone_selected = cur_drone_list_selected[idx].name;
+                            let drone_selected = cur_drone_list_selected[idx].name;
 
                             command_delay++;
 
@@ -2307,19 +2319,23 @@ function actionRealControl() {
     else {
         column_count = 13;
 
-        var command_delay = 0;
-        for (var idx in cur_drone_list_selected) {
+        let command_delay = 0;
+        for (let idx in cur_drone_list_selected) {
             if (cur_drone_list_selected.hasOwnProperty(idx)) {
-                var drone_selected = cur_drone_list_selected[idx].name;
+                let drone_selected = cur_drone_list_selected[idx].name;
 
                 command_delay++;
 
+                let chan3_raw;
+                let chan4_raw;
+                let chan2_raw;
+                let chan1_raw;
                 if (rc1_trim.hasOwnProperty(target_system_id[drone_selected]) && rc2_trim.hasOwnProperty(target_system_id[drone_selected]) &&
                     rc3_trim.hasOwnProperty(target_system_id[drone_selected]) && rc4_trim.hasOwnProperty(target_system_id[drone_selected])) {
-                    var chan3_raw = rc3_trim[target_system_id[drone_selected]].param_value + throttle_offset;
-                    var chan4_raw = rc4_trim[target_system_id[drone_selected]].param_value + yaw_offset;
-                    var chan2_raw = rc2_trim[target_system_id[drone_selected]].param_value + pitch_offset;
-                    var chan1_raw = rc1_trim[target_system_id[drone_selected]].param_value + roll_offset;
+                    chan3_raw = rc3_trim[target_system_id[drone_selected]].param_value + throttle_offset;
+                    chan4_raw = rc4_trim[target_system_id[drone_selected]].param_value + yaw_offset;
+                    chan2_raw = rc2_trim[target_system_id[drone_selected]].param_value + pitch_offset;
+                    chan1_raw = rc1_trim[target_system_id[drone_selected]].param_value + roll_offset;
 
                     term.moveTo.eraseLine.cyan(1, conf.drone.length + column_count, '[' + drone_selected + '] throttle: ' + chan3_raw + '(' + throttle_offset +
                         ') , yaw: ' + chan4_raw + '(' + yaw_offset +
@@ -2356,15 +2372,15 @@ function eachRealControlMenu() {
 
     //term.yellow("w: throttle up\ns: throttle down\na: yaw left\nd: yaw right\nup: pitch up\ndown: pitch down\nleft: roll left\nright: roll right\n");
     term.yellow("w: throttle_high\n" +
-    "a: yaw_left\n" +
-    "s: throttle_low\n" +
-    "d: yaw_right\n" +
-    "UP: pitch_forward\n" +
-    "LEFT: roll_left\n" +
-    "DOWN: pitch_backward\n" +
-    "RIGHT: roll_right\n" +
-    "7: loiter\n" +
-    "9: alt_hold");
+        "a: yaw_left\n" +
+        "s: throttle_low\n" +
+        "d: yaw_right\n" +
+        "UP: pitch_forward\n" +
+        "LEFT: roll_left\n" +
+        "DOWN: pitch_backward\n" +
+        "RIGHT: roll_right\n" +
+        "7: loiter\n" +
+        "9: alt_hold");
 
     setTimeout(actionRealControl, 1000);
 }
@@ -2373,14 +2389,10 @@ setTimeout(startMenu, back_menu_delay);
 
 function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
     const mavlinkParser = new MAVLink(null/*logger*/, src_sys_id, src_comp_id);
-    try {
-        var mavMsg = null;
-        var genMsg = null;
-        //var targetSysId = sysId;
-        var targetCompId = (params.targetCompId == undefined) ?
-            0 :
-            params.targetCompId;
+    let mavMsg = null;
+    let genMsg = null;
 
+    try {
         switch (type) {
             // MESSAGE ////////////////////////////////////
             case mavlink.MAVLINK_MSG_ID_PING:
@@ -2556,7 +2568,7 @@ function mavlinkGenerateMessage(src_sys_id, src_comp_id, type, params) {
 }
 
 function send_reboot_command(target_name, pub_topic, target_sys_id) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN;
@@ -2570,14 +2582,14 @@ function send_reboot_command(target_name, pub_topic, target_sys_id) {
     btn_params.param7 = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.blue('Send Reboot command to %s\n', target_name);
             term.red('msg: ' + msg.toString('hex') + '\n');
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2585,10 +2597,10 @@ function send_reboot_command(target_name, pub_topic, target_sys_id) {
     }
 }
 
-var column_count = 0;
+let column_count = 0;
 
 function send_arm_command(target_name, pub_topic, target_sys_id, param1, param2) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_COMPONENT_ARM_DISARM;
@@ -2602,13 +2614,13 @@ function send_arm_command(target_name, pub_topic, target_sys_id, param1, param2)
     btn_params.param7 = 65535;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Arm command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2617,7 +2629,7 @@ function send_arm_command(target_name, pub_topic, target_sys_id, param1, param2)
 }
 
 function send_start_mission_command(target_name, pub_topic, target_sys_id, param1, param2) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_MISSION_START;
@@ -2631,46 +2643,13 @@ function send_start_mission_command(target_name, pub_topic, target_sys_id, param
     btn_params.param7 = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Start Mission command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
-        }
-    }
-    catch (ex) {
-        console.log('[ERROR] ' + ex);
-    }
-}
-
-function send_takeoff_command2(target_name, pub_topic, target_sys_id, alt) {
-    var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.seq = 0;
-    btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_TAKEOFF;
-    btn_params.current = 2;
-    btn_params.autocontinue = 0;
-    btn_params.param1 = 0; // Minimum pitch (if airspeed sensor present)
-    btn_params.param2 = 0; // Empty
-    btn_params.param3 = 0; // Empty
-    btn_params.param4 = 0; // Yaw angle
-    btn_params.param5 = 0; // Latitude
-    btn_params.param6 = 0; // Longitude
-    btn_params.param7 = alt; // Altitude
-    btn_params.mission_type = 0;
-
-    try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
-            console.log("mavlink message is null");
-        }
-        else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Takeoff command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2679,7 +2658,7 @@ function send_takeoff_command2(target_name, pub_topic, target_sys_id, alt) {
 }
 
 function send_takeoff_command(target_name, pub_topic, target_sys_id, alt) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_NAV_TAKEOFF;
@@ -2693,13 +2672,13 @@ function send_takeoff_command(target_name, pub_topic, target_sys_id, alt) {
     btn_params.param7 = alt; // Altitude
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Takeoff command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + alt, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2708,26 +2687,26 @@ function send_takeoff_command(target_name, pub_topic, target_sys_id, alt) {
 }
 
 function send_set_mode_command(target_name, pub_topic, target_sys_id, base_mode, custom_mode) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.base_mode = base_mode;
     btn_params.custom_mode = custom_mode;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_SET_MODE, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_SET_MODE, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Mode command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + mode_items[custom_mode+1], target_name);
-            mqtt_client.publish(pub_topic, msg);
+            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Mode command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + mode_items[custom_mode + 1], target_name);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
         console.log('[ERROR] ' + ex);
     }
 
-    // var btn_params = {};
+    // let btn_params = {};
     // btn_params.target_system = target_sys_id;
     // btn_params.target_component = 1;
     // btn_params.command = mavlink.MAV_CMD_DO_SET_MODE;
@@ -2741,8 +2720,8 @@ function send_set_mode_command(target_name, pub_topic, target_sys_id, base_mode,
     // btn_params.param7 = 65535;
     //
     // try {
-    //     var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-    //     if (msg == null) {
+    //     let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+    //     if (!msg) {
     //         console.log("mavlink message is null");
     //     }
     //     else {
@@ -2750,9 +2729,9 @@ function send_set_mode_command(target_name, pub_topic, target_sys_id, base_mode,
     //         term.blue('Send Set Mode command to %s\n', target_name);
     //         term.red('msg: ' +  msg.toString('hex') + '\n');
     //         // console.log('msg_seq : ', msg.slice(2,3));
-    //         //mqtt_client.publish(my_cnt_name, msg.toString('hex'));
+    //         //mobius_mqtt_client.publish(my_cnt_name, msg.toString('hex'));
     //         //_this.send_aggr_to_Mobius(my_cnt_name, msg.toString('hex'), 1500);
-    //         mqtt_client.publish(pub_topic, msg);
+    //         mobius_mqtt_client.publish(pub_topic, msg);
     //     }
     // }
     // catch( ex ) {
@@ -2760,41 +2739,8 @@ function send_set_mode_command(target_name, pub_topic, target_sys_id, base_mode,
     // }
 }
 
-function send_hold_command(target_name, pub_topic, target_sys_id) {
-    var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.seq = 0;
-    btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
-    btn_params.current = 2;
-    btn_params.autocontinue = 0;
-    btn_params.param1 = 0;
-    btn_params.param2 = 0;
-    btn_params.param3 = 0;
-    btn_params.param4 = 0;
-    btn_params.param5 = gpi[target_system_id[target_name]].lat / 10000000;
-    btn_params.param6 = gpi[target_system_id[target_name]].lon / 10000000;
-    btn_params.param7 = gpi[target_system_id[target_name]].relative_alt / 1000;
-    btn_params.mission_type = 0;
-
-    try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
-            console.log("mavlink message is null");
-        }
-        else {
-            term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Hold command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
-        }
-    }
-    catch (ex) {
-        console.log('[ERROR] ' + ex);
-    }
-}
-
 function send_goto_alt_command(target_name, pub_topic, target_sys_id, alt) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.seq = 0;
@@ -2812,13 +2758,13 @@ function send_goto_alt_command(target_name, pub_topic, target_sys_id, alt) {
     btn_params.mission_type = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Goto Alt command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + alt, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2826,10 +2772,8 @@ function send_goto_alt_command(target_name, pub_topic, target_sys_id, alt) {
     }
 }
 
-var goto_sequence = 0;
-
 function send_goto_command(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.seq = 0;
@@ -2849,13 +2793,13 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
     //console.log(latitude, longitude, rel_altitude);
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send GoTo command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -2866,17 +2810,17 @@ function send_goto_command(target_name, pub_topic, target_sys_id, latitude, long
 const MISSION_ACK_TIMEOUT_COUNT = 20;
 
 function result_mission_item_complete(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count) {
-    if(result_mission_ack[target_sys_id].type == 0) {
+    if (result_mission_ack[target_sys_id].type === 0) {
         term.moveTo.blue(1, conf.drone.length + column_count++, 'Mission Upload Complete to %s', target_name);
 
-        var custom_mode = 3; // AUTO Mode
-        var base_mode = hb[target_system_id[target_name]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+        let custom_mode = 3; // AUTO Mode
+        let base_mode = hb[target_system_id[target_name]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
         setTimeout(send_set_mode_command, 100, target_name, target_pub_topic[target_name], target_system_id[target_name], base_mode, custom_mode);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
@@ -2887,17 +2831,17 @@ function result_mission_item_complete(target_name, pub_topic, target_sys_id, lat
 }
 
 function result_auto_mission_item_complete(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, result_column, result_check_count) {
-    if(result_mission_ack[target_sys_id].type == 0) {
+    if (result_mission_ack[target_sys_id].type === 0) {
         term.moveTo.blue(1, conf.drone.length + column_count++, 'Mission Upload Complete to %s', target_name);
 
-        var custom_mode = 3; // AUTO Mode
-        var base_mode = hb[target_system_id[target_name]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+        let custom_mode = 3; // AUTO Mode
+        let base_mode = hb[target_system_id[target_name]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
         base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
         setTimeout(send_set_mode_command, 100, target_name, target_pub_topic[target_name], target_system_id[target_name], base_mode, custom_mode);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
@@ -2908,14 +2852,14 @@ function result_auto_mission_item_complete(target_name, pub_topic, target_sys_id
 }
 
 function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count) {
-    if(mission_request[target_sys_id].seq <= 1) {
+    if (mission_request[target_sys_id].seq <= 1) {
         term.moveTo.blue(1, conf.drone.length + column_count++, mission_request[target_sys_id].seq + ' MISSION REQUEST from %s', target_name);
 
         setTimeout(send_mission_protocol, 1, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, mission_request[target_sys_id].seq);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
@@ -2926,14 +2870,14 @@ function result_mission_protocol(target_name, pub_topic, target_sys_id, latitude
 }
 
 function result_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, result_column, result_check_count) {
-    if(mission_request[target_sys_id].seq != 255) {
+    if (mission_request[target_sys_id].seq !== 255) {
         term.moveTo.blue(1, conf.drone.length + column_count++, mission_request[target_sys_id].seq + ' MISSION REQUEST from %s', target_name);
 
         setTimeout(send_auto_mission_protocol, 1, target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, mission_request[target_sys_id].seq);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Upload Error at %s', target_name);
         }
         else {
@@ -2944,9 +2888,9 @@ function result_auto_mission_protocol(target_name, pub_topic, target_sys_id, got
 }
 
 function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, seq) {
-    var btn_params = {};
+    let btn_params = {};
 
-    if(seq == 0) {
+    if (seq === 0) {
         btn_params.target_system = target_sys_id;
         btn_params.target_component = 1;
         btn_params.seq = 0;
@@ -2982,16 +2926,16 @@ function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, 
     }
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, seq + ' Send MISSION_ITEM to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(seq < 1) {
+            if (seq < 1) {
                 if (!mission_request.hasOwnProperty(target_sys_id)) {
                     mission_request[target_sys_id] = {};
                 }
@@ -3001,7 +2945,7 @@ function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, 
                 setTimeout(result_mission_protocol, 50, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count);
             }
             else {
-                if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
+                if (!result_mission_ack.hasOwnProperty(target_sys_id)) {
                     result_mission_ack[target_sys_id] = {};
                 }
                 result_mission_ack[target_sys_id].type = 255;
@@ -3017,9 +2961,9 @@ function send_mission_protocol(target_name, pub_topic, target_sys_id, latitude, 
 }
 
 function send_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, seq) {
-    var btn_params = {};
+    let btn_params = {};
 
-    if(seq == 0) {
+    if (seq === 0) {
         btn_params.target_system = target_sys_id;
         btn_params.target_component = 1;
         btn_params.seq = 0;
@@ -3039,11 +2983,10 @@ function send_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_
     else {
         cur_goto_position = goto_each_position[cur_idx++];
 
-        var arr_cur_goto_position = cur_goto_position.split(':');
-        var latitude = parseFloat(arr_cur_goto_position[0]);
-        var longitude = parseFloat(arr_cur_goto_position[1]);
-        var rel_altitude = parseFloat(arr_cur_goto_position[2]);
-        var speed = parseFloat(arr_cur_goto_position[3]);
+        let arr_cur_goto_position = cur_goto_position.split(':');
+        let latitude = parseFloat(arr_cur_goto_position[0]);
+        let longitude = parseFloat(arr_cur_goto_position[1]);
+        let rel_altitude = parseFloat(arr_cur_goto_position[2]);
 
         btn_params.target_system = target_sys_id;
         btn_params.target_component = 1;
@@ -3063,16 +3006,16 @@ function send_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_
     }
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, seq + ' Send MISSION_ITEM to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + cur_idx, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(cur_idx <= end_idx) {
+            if (cur_idx <= end_idx) {
                 if (!mission_request.hasOwnProperty(target_sys_id)) {
                     mission_request[target_sys_id] = {};
                 }
@@ -3082,7 +3025,7 @@ function send_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_
                 setTimeout(result_auto_mission_protocol, 50, target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, result_column, result_check_count);
             }
             else {
-                if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
+                if (!result_mission_ack.hasOwnProperty(target_sys_id)) {
                     result_mission_ack[target_sys_id] = {};
                 }
                 result_mission_ack[target_sys_id].type = 255;
@@ -3098,23 +3041,23 @@ function send_auto_mission_protocol(target_name, pub_topic, target_sys_id, goto_
 }
 
 function send_mission_count(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.count = 2;
     btn_params.mission_type = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_COUNT, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_COUNT, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_COUNT to %s, msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(!mission_request.hasOwnProperty(target_sys_id)) {
+            if (!mission_request.hasOwnProperty(target_sys_id)) {
                 mission_request[target_sys_id] = {};
             }
             mission_request[target_sys_id].seq = 255;
@@ -3129,23 +3072,23 @@ function send_mission_count(target_name, pub_topic, target_sys_id, latitude, lon
 }
 
 function send_auto_mission_count(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.count = 1 + end_idx - start_idx + 1;
     btn_params.mission_type = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_COUNT, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_COUNT, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send MISSION_COUNT to %s, msg: ' + msg.toString('hex') + ' - ' + cur_idx, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(!mission_request.hasOwnProperty(target_sys_id)) {
+            if (!mission_request.hasOwnProperty(target_sys_id)) {
                 mission_request[target_sys_id] = {};
             }
             mission_request[target_sys_id].seq = 255;
@@ -3159,15 +3102,16 @@ function send_auto_mission_count(target_name, pub_topic, target_sys_id, goto_eac
     }
 }
 
-var result_check_count = 0;
+let result_check_count = 0;
+
 function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius, result_column, result_check_count) {
-    if(result_mission_ack[target_sys_id].type == 0) {
+    if (result_mission_ack[target_sys_id].type === 0) {
         term.moveTo.blue(1, conf.drone.length + column_count++, 'Clear All Mission of %s', target_name);
         setTimeout(send_mission_count, 1, target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Clear Error at %s', target_name);
         }
         else {
@@ -3178,13 +3122,13 @@ function result_mission_clear_all(target_name, pub_topic, target_sys_id, latitud
 }
 
 function result_auto_mission_clear_all(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx, result_column, result_check_count) {
-    if(result_mission_ack[target_sys_id].type == 0) {
+    if (result_mission_ack[target_sys_id].type === 0) {
         term.moveTo.blue(1, conf.drone.length + column_count++, 'Clear All Mission of %s', target_name);
         setTimeout(send_auto_mission_count, 1, target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx);
     }
     else {
         result_check_count++;
-        if(result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
+        if (result_check_count > MISSION_ACK_TIMEOUT_COUNT) {
             term.moveTo.eraseLineAfter.red(136, conf.drone.length + result_column, 'Mission Clear Error at %s', target_name);
         }
         else {
@@ -3194,24 +3138,25 @@ function result_auto_mission_clear_all(target_name, pub_topic, target_sys_id, go
     }
 }
 
-var result_column = 0;
+let result_column = 0;
+
 function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitude, longitude, rel_altitude, speed, radius) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.mission_type = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Mission Clear All command to %s, msg: ' + msg.toString('hex') + ' - ' + radius, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
+            if (!result_mission_ack.hasOwnProperty(target_sys_id)) {
                 result_mission_ack[target_sys_id] = {};
             }
             result_mission_ack[target_sys_id].type = 255;
@@ -3226,22 +3171,22 @@ function send_goto_circle_command(target_name, pub_topic, target_sys_id, latitud
 }
 
 function send_auto_command(target_name, pub_topic, target_sys_id, goto_each_position, start_idx, end_idx, delay, cur_idx) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.mission_type = 0;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_CLEAR_ALL, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             result_column = column_count;
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Mission Clear All command to %s, msg: ' + msg.toString('hex') + ' - ' + cur_idx, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
 
-            if(!result_mission_ack.hasOwnProperty(target_sys_id)) {
+            if (!result_mission_ack.hasOwnProperty(target_sys_id)) {
                 result_mission_ack[target_sys_id] = {};
             }
             result_mission_ack[target_sys_id].type = 255;
@@ -3255,60 +3200,8 @@ function send_auto_command(target_name, pub_topic, target_sys_id, goto_each_posi
     }
 }
 
-function send_alt_command(target_name, pub_topic, target_sys_id, rel_altitude) {
-    var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.seq = 0;
-    btn_params.frame = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // 0: MAV_FRAME_GLOBAL, 3: MAV_FRAME_GLOBAL_RELATIVE_ALT
-    btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
-    btn_params.current = 2;
-    btn_params.autocontinue = 0;
-    btn_params.param1 = 0;
-    btn_params.param2 = 0;
-    btn_params.param3 = 0;
-    btn_params.param4 = 0;
-    btn_params.param5 = 0;
-    btn_params.param6 = 0;
-    btn_params.param7 = rel_altitude;
-    btn_params.mission_type = 0;
-
-    // var btn_params = {};
-    // btn_params.target_system = target_sys_id;
-    // btn_params.target_component = 1;
-    // btn_params.command = mavlink.MAV_CMD_NAV_WAYPOINT;
-    // btn_params.confirmation = 0;
-    // btn_params.param1 = 0; // Abort Alt
-    // btn_params.param2 = 0; // Land Mode
-    // btn_params.param3 = 0; // Empty
-    // btn_params.param4 = 0; // Yaw angle
-    // btn_params.param5 = 0; // Latitude
-    // btn_params.param6 = 0; // Longitude
-    // btn_params.param7 = rel_altitude; // Altitude
-
-    try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_MISSION_ITEM_INT, btn_params);
-        //var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
-            console.log("mavlink message is null");
-        }
-        else {
-            //console.log('msg: ', msg);
-            term.blue('\nSend GoTo command to %s\n', target_name);
-            term.red('msg: ' + msg.toString('hex') + '\n');
-            // console.log('msg_seq : ', msg.slice(2,3));
-            //mqtt_client.publish(my_cnt_name, msg.toString('hex'));
-            //_this.send_aggr_to_Mobius(my_cnt_name, msg.toString('hex'), 1500);
-            mqtt_client.publish(pub_topic, msg);
-        }
-    }
-    catch (ex) {
-        console.log('[ERROR] ' + ex);
-    }
-}
-
 function send_change_speed_command(target_name, pub_topic, target_sys_id, target_speed) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_DO_CHANGE_SPEED;
@@ -3322,13 +3215,13 @@ function send_change_speed_command(target_name, pub_topic, target_sys_id, target
     btn_params.param7 = 0; // Empty
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Change_Speed command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3337,7 +3230,7 @@ function send_change_speed_command(target_name, pub_topic, target_sys_id, target
 }
 
 function send_land_command(target_name, pub_topic, target_sys_id) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_NAV_LAND;
@@ -3351,13 +3244,13 @@ function send_land_command(target_name, pub_topic, target_sys_id) {
     btn_params.param7 = 0; // Altitude
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Land command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3366,7 +3259,7 @@ function send_land_command(target_name, pub_topic, target_sys_id) {
 }
 
 function send_rtl_command(target_name, pub_topic, target_sys_id) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH;
@@ -3380,13 +3273,13 @@ function send_rtl_command(target_name, pub_topic, target_sys_id) {
     btn_params.param7 = 0; //
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send RTL command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3395,7 +3288,7 @@ function send_rtl_command(target_name, pub_topic, target_sys_id) {
 }
 
 function send_set_roi_command(target_name, pub_topic, target_sys_id, target_lat, target_lon, target_alt) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_DO_SET_ROI;
@@ -3409,13 +3302,13 @@ function send_set_roi_command(target_name, pub_topic, target_sys_id, target_lat,
     btn_params.param7 = target_alt; // Altitude of the fixed ROI
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set ROI command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3424,7 +3317,7 @@ function send_set_roi_command(target_name, pub_topic, target_sys_id, target_lat,
 }
 
 function send_set_servo_command(target_name, pub_topic, target_sys_id, target_number, target_pwm) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_DO_SET_SERVO;
@@ -3438,13 +3331,13 @@ function send_set_servo_command(target_name, pub_topic, target_sys_id, target_nu
     btn_params.param7 = 0; //
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Servo command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + target_number + ':' + target_pwm, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3453,7 +3346,7 @@ function send_set_servo_command(target_name, pub_topic, target_sys_id, target_nu
 }
 
 function send_set_relay_command(target_name, pub_topic, target_sys_id, target_number, target_val) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.command = mavlink.MAV_CMD_DO_SET_RELAY;
@@ -3467,43 +3360,13 @@ function send_set_relay_command(target_name, pub_topic, target_sys_id, target_nu
     btn_params.param7 = 0; //
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send Set Relay command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
-        }
-    }
-    catch (ex) {
-        console.log('[ERROR] ' + ex);
-    }
-}
-
-function send_change_altitude_command(target_name, pub_topic, target_sys_id, target_alt) {
-    var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.command = mavlink.MAV_CMD_DO_CHANGE_ALTITUDE;
-    btn_params.confirmation = 0;
-    btn_params.param1 = target_alt; // Altitude
-    btn_params.param2 = mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT; // Frame of new altitude.
-    btn_params.param3 = 0; // Empty
-    btn_params.param4 = 0; // Empty
-    btn_params.param5 = 0; // Empty
-    btn_params.param6 = 0; // Empty
-    btn_params.param7 = 0; // Empty
-
-    try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_COMMAND_LONG, btn_params);
-        if (msg == null) {
-            console.log("mavlink message is null");
-        }
-        else {
-            term.blue('Send Change Altitude command to %s\n', target_name);
-            term.red('msg: ' + msg.toString('hex') + '\n');
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3512,7 +3375,7 @@ function send_change_altitude_command(target_name, pub_topic, target_sys_id, tar
 }
 
 function send_wp_yaw_behavior_param_set_command(target_name, pub_topic, target_sys_id, value) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WP_YAW_BEHAVIOR";
@@ -3520,13 +3383,13 @@ function send_wp_yaw_behavior_param_set_command(target_name, pub_topic, target_s
     btn_params.param_value = value;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send WP_YAW_HEHAVIOR param set command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3535,7 +3398,7 @@ function send_wp_yaw_behavior_param_set_command(target_name, pub_topic, target_s
 }
 
 function send_atc_slew_yaw_param_set_command(target_name, pub_topic, target_sys_id, value) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "ATC_SLEW_YAW";
@@ -3543,13 +3406,13 @@ function send_atc_slew_yaw_param_set_command(target_name, pub_topic, target_sys_
     btn_params.param_value = value * 100; // centidegrees pre second (500 - 18000)
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send ATC_SLEW_YAW param set command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3558,7 +3421,7 @@ function send_atc_slew_yaw_param_set_command(target_name, pub_topic, target_sys_
 }
 
 function send_acro_yaw_p_param_set_command(target_name, pub_topic, target_sys_id, value) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "ACRO_YAW_P";
@@ -3566,13 +3429,13 @@ function send_acro_yaw_p_param_set_command(target_name, pub_topic, target_sys_id
     btn_params.param_value = value; // Converts pilot yaw input into a desired rate of rotation. Higher values mean faster rate of rotation. (1 - 10)
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send ACRO_YAW_P param set command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3581,7 +3444,7 @@ function send_acro_yaw_p_param_set_command(target_name, pub_topic, target_sys_id
 }
 
 function send_wpnav_radius_param_set_command(target_name, pub_topic, target_sys_id, value) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_RADIUS";
@@ -3589,13 +3452,13 @@ function send_wpnav_radius_param_set_command(target_name, pub_topic, target_sys_
     btn_params.param_value = value; // Defines the distance from a waypoint, that when crossed indicates the wp has been hit. (5 ~ 1000 cm)
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send WPNAV_RADIUS param set command to %s, ' + 'msg: ' + msg.toString('hex') + ' - ' + value, target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3604,7 +3467,7 @@ function send_wpnav_radius_param_set_command(target_name, pub_topic, target_sys_
 }
 
 function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_SPEED";
@@ -3612,13 +3475,13 @@ function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_i
     btn_params.param_value = target_speed * 100; // cm / s.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send WPNAV Speed command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3627,7 +3490,7 @@ function send_wpnav_speed_param_set_command(target_name, pub_topic, target_sys_i
 }
 
 function send_wpnav_speed_dn_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "WPNAV_SPEED_DN";
@@ -3635,37 +3498,13 @@ function send_wpnav_speed_dn_param_set_command(target_name, pub_topic, target_sy
     btn_params.param_value = target_speed * 100; // cm / s.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send WPNAV Speed DN to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
-        }
-    }
-    catch (ex) {
-        console.log('[ERROR] ' + ex);
-    }
-}
-
-function send_wpnav_speed_up_param_set_command(target_name, pub_topic, target_sys_id, target_speed) {
-    var btn_params = {};
-    btn_params.target_system = target_sys_id;
-    btn_params.target_component = 1;
-    btn_params.param_id = "WPNAV_SPEED_UP";
-    btn_params.param_type = mavlink.MAV_PARAM_TYPE_REAL32;
-    btn_params.param_value = target_speed * 100; // cm / s.
-
-    try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
-            console.log("mavlink message is null");
-        }
-        else {
-            term.blue('\nSend WPNAV Speed UP command to %s\n', target_name);
-            term.red('msg: ' + msg.toString('hex') + '\n');
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3674,7 +3513,7 @@ function send_wpnav_speed_up_param_set_command(target_name, pub_topic, target_sy
 }
 
 function send_circle_radius_param_set_command(target_name, pub_topic, target_sys_id, target_radius) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "CIRCLE_RADIUS";
@@ -3682,13 +3521,13 @@ function send_circle_radius_param_set_command(target_name, pub_topic, target_sys
     btn_params.param_value = target_radius * 100; // cm / s.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set CIRCLE_RADIUS (' + target_radius + ') command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3697,7 +3536,7 @@ function send_circle_radius_param_set_command(target_name, pub_topic, target_sys
 }
 
 function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_id, target_rate) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "CIRCLE_RATE";
@@ -3705,13 +3544,13 @@ function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_i
     btn_params.param_value = target_rate; // v = rw -> w = v / r.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set CIRCLE_RATE (' + target_rate + ') command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3720,7 +3559,7 @@ function send_circle_rate_param_set_command(target_name, pub_topic, target_sys_i
 }
 
 function send_servo_param_set_command(target_name, pub_topic, target_sys_id, target_number, target_val) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "SERVO" + target_number + "_FUNCTION";
@@ -3728,13 +3567,13 @@ function send_servo_param_set_command(target_name, pub_topic, target_sys_id, tar
     btn_params.param_value = target_val; // v = rw -> w = v / r.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send set SERVO' + target_number + '_FUNCTION command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3743,7 +3582,7 @@ function send_servo_param_set_command(target_name, pub_topic, target_sys_id, tar
 }
 
 function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys_id, id_val) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = "SYSID_THISMAV";
@@ -3751,13 +3590,13 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
     btn_params.param_value = id_val; // cm / s.
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_SET, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send SYSID_THISMAV command to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -3780,7 +3619,7 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
 // FOLL_ALT_TYPE : allows selecting whether to use lead vehicle’s relative-to-home or relative-to-sea-level altitude
 
 // MAV_CMD_DO_SET_ROI
-// Sets the region of interest (ROI) for a sensor set or the vehicle itself. This can then be used by the vehicles control system to control the vehicle attitude and the attitude of various sensors such as cameras.
+// Sets the region of interest (ROI) for a sensor set or the vehicle itself. This can then be used by the vehicles control system to control the vehicle attitude and the attitude of letious sensors such as cameras.
 
 // MAV_CMD_DO_SET_RELAY
 // Set a Relay pin’s voltage high (on) or low (off).
@@ -3788,21 +3627,21 @@ function send_sysid_thismav_param_set_command(target_name, pub_topic, target_sys
 // MAV_CMD_DO_SET_SERVO
 // Set a given servo pin output to a specific PWM value.
 
-var printFlag = '';
-setInterval(function () {
-    for (var idx in conf.drone) {
+let printFlag = '';
+setInterval(() => {
+    for (let idx in conf.drone) {
         if (conf.drone.hasOwnProperty(idx)) {
-            var drone_selected = conf.drone[idx].name;
+            let drone_selected = conf.drone[idx].name;
 
-            if(!autoLandingGearFlag.hasOwnProperty(drone_selected)) {
+            if (!autoLandingGearFlag.hasOwnProperty(drone_selected)) {
                 autoLandingGearFlag[drone_selected] = 'down';
             }
 
-            if(!autoLedFlag.hasOwnProperty(drone_selected)) {
+            if (!autoLedFlag.hasOwnProperty(drone_selected)) {
                 autoLedFlag[drone_selected] = 'off';
             }
 
-            if(!curPosInfo.hasOwnProperty(drone_selected)) {
+            if (!curPosInfo.hasOwnProperty(drone_selected)) {
                 curPosInfo[drone_selected] = {};
                 curPosInfo[drone_selected].lat = 0.0;
                 curPosInfo[drone_selected].lon = 0.0;
@@ -3824,18 +3663,18 @@ setInterval(function () {
     }
 }, 1000);
 
-var goto_dist = 0;
-var placeFlag = '';
-var autoLandingGearFlag = {};
-var autoLedFlag = {};
-var curPosInfo = {};
+let goto_dist = 0;
+let placeFlag = '';
+let autoLandingGearFlag = {};
+let autoLedFlag = {};
+let curPosInfo = {};
 
-setInterval(function () {
-    var command_delay = 0;
-    for (var idx in conf.drone) {
+setInterval(() => {
+    let command_delay = 0;
+    for (let idx in conf.drone) {
         if (conf.drone.hasOwnProperty(idx)) {
 
-            if(drone_info_file_update_flag == 1) {
+            if (drone_info_file_update_flag === 1) {
                 drone_info_file_update_flag = 0;
 
                 drone_items.push(conf.drone[idx].name);
@@ -3868,12 +3707,12 @@ setInterval(function () {
                 follow_mode[conf.drone[idx].system_id].foll_ofs_z = 10;
                 follow_mode[conf.drone[idx].system_id].foll_pos_p = 5;
 
-                target_pub_topic[conf.drone[idx].name] = '/Mobius/' + conf.gcs + '/GCS_Data/' + conf.drone[idx].name;
+                target_pub_topic[conf.drone[idx].name] = '/Mobius/' + conf.drone[idx].gcs + '/GCS_Data/' + conf.drone[idx].name;
             }
             else {
                 command_delay++;
 
-                var drone_selected = conf.drone[idx].name;
+                let drone_selected = conf.drone[idx].name;
 
                 if (!autoLandingGearFlag.hasOwnProperty(drone_selected)) {
                     autoLandingGearFlag[drone_selected] = 'down';
@@ -3907,7 +3746,7 @@ setInterval(function () {
                 curPosInfo[drone_selected].alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
                 curPosInfo[drone_selected].speed = Math.sqrt(Math.pow(gpi[target_system_id[drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[drone_selected]].vy, 2)) / 100;
 
-                var result1 = dfs_xy_conv('toXY', curPosInfo[drone_selected].lat, curPosInfo[drone_selected].lon);
+                let result1 = dfs_xy_conv('toXY', curPosInfo[drone_selected].lat, curPosInfo[drone_selected].lon);
 
                 if (hb.hasOwnProperty(target_system_id[drone_selected])) {
                     if (hb[target_system_id[drone_selected]].base_mode & 0x80) {
@@ -3931,11 +3770,11 @@ setInterval(function () {
                 }
 
                 if (cur_goto_position_selected.hasOwnProperty(drone_selected)) {
-                    var arr_cur_goto_position = cur_goto_position_selected[drone_selected].split(':');
-                    var tar_lat = parseFloat(arr_cur_goto_position[0]);
-                    var tar_lon = parseFloat(arr_cur_goto_position[1]);
-                    var tar_alt = parseFloat(arr_cur_goto_position[2]);
-                    var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
+                    let arr_cur_goto_position = cur_goto_position_selected[drone_selected].split(':');
+                    let tar_lat = parseFloat(arr_cur_goto_position[0]);
+                    let tar_lon = parseFloat(arr_cur_goto_position[1]);
+                    let tar_alt = parseFloat(arr_cur_goto_position[2]);
+                    let result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
                     goto_dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - curPosInfo[drone_selected].alt), 2)).toFixed(2);
                 }
@@ -3943,19 +3782,21 @@ setInterval(function () {
                     goto_dist = (0.00).toFixed(2);
                 }
 
-                if (conf.auto_landing_gear == 'enable') {
-                    if (curPosInfo[drone_selected].alt > 10.0 && curPosInfo[drone_selected].mode != 'ALT_HOLD' &&
-                        curPosInfo[drone_selected].mode != 'LOITER' && curPosInfo[drone_selected].mode != 'POS_HOLD') {
-                        if (autoLandingGearFlag[drone_selected] != 'up') {
-                            var number = 10;
-                            var pwm = 1900;
+                let number;
+                let pwm;
+                if (conf.auto_landing_gear === 'enable') {
+                    if (curPosInfo[drone_selected].alt > 10.0 && curPosInfo[drone_selected].mode !== 'ALT_HOLD' &&
+                        curPosInfo[drone_selected].mode !== 'LOITER' && curPosInfo[drone_selected].mode !== 'POS_HOLD') {
+                        if (autoLandingGearFlag[drone_selected] !== 'up') {
+                            number = 10;
+                            pwm = 1900;
                             setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
                             autoLandingGearFlag[drone_selected] = 'up';
                         }
                     }
-                    else if (curPosInfo[drone_selected].alt < 10.0 && curPosInfo[drone_selected].mode == 'LAND' &&
-                        curPosInfo[drone_selected].mode == 'RTL') {
-                        if (autoLandingGearFlag[drone_selected] != 'down') {
+                    else if (curPosInfo[drone_selected].alt < 10.0 && curPosInfo[drone_selected].mode === 'LAND' &&
+                        curPosInfo[drone_selected].mode === 'RTL') {
+                        if (autoLandingGearFlag[drone_selected] !== 'down') {
                             number = 10;
                             pwm = 1100;
                             setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
@@ -3964,9 +3805,9 @@ setInterval(function () {
                     }
                 }
 
-                if (conf.auto_led == 'enable') {
+                if (conf.auto_led === 'enable') {
                     if (curPosInfo[drone_selected].alt > 5.0) {
-                        if (autoLedFlag[drone_selected] == 'off') {
+                        if (autoLedFlag[drone_selected] === 'off') {
                             number = 9;
                             pwm = 1900;
                             setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
@@ -3974,7 +3815,7 @@ setInterval(function () {
                         }
                     }
                     else if (curPosInfo[drone_selected].alt < 5.0) { //if(status == 'Disarmed') {
-                        if (autoLedFlag[drone_selected] == 'on') {
+                        if (autoLedFlag[drone_selected] === 'on') {
                             number = 9;
                             pwm = 1100;
                             setTimeout(send_set_servo_command, 10 * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], number, pwm);
@@ -3988,20 +3829,20 @@ setInterval(function () {
 }, 800);
 
 function send_param_get_command(target_name, pub_topic, target_sys_id, param_id) {
-    var btn_params = {};
+    let btn_params = {};
     btn_params.target_system = target_sys_id;
     btn_params.target_component = 1;
     btn_params.param_id = param_id;
     btn_params.param_index = -1;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_REQUEST_READ, btn_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_PARAM_REQUEST_READ, btn_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + column_count++, 'Send param get command of ' + param_id + ' to %s, ' + 'msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -4013,32 +3854,32 @@ function send_param_get_command(target_name, pub_topic, target_sys_id, param_id)
 const throttle_max = 2006;
 const throttle_min = 982;
 const throttle_neutral = 1494
-var throttle_val = throttle_min;
-var throttle_offset = 0;
+let throttle_val = throttle_min;
+let throttle_offset = 0;
 
 // rc4
 const yaw_max = 2006;
 const yaw_min = 982;
 const yaw_neutral = 1493;
-var yaw_val = yaw_neutral;
-var yaw_offset = 0;
+let yaw_val = yaw_neutral;
+let yaw_offset = 0;
 
 // rc2
 const pitch_max = 2006;
 const pitch_min = 982;
 const pitch_neutral = 1496;
-var pitch_val = pitch_neutral;
-var pitch_offset = 0;
+let pitch_val = pitch_neutral;
+let pitch_offset = 0;
 
 // rc1
 const roll_max = 2006;
 const roll_min = 982;
 const roll_neutral = 1492;
-var roll_val = roll_neutral;
-var roll_offset = 0;
+let roll_val = roll_neutral;
+let roll_offset = 0;
 
 function send_joystick_command(target_name, pub_topic, target_sys_id) {
-    var rc_params = {};
+    let rc_params = {};
     rc_params.target_system = target_sys_id;
     rc_params.target_component = 1;
     //rc_params.chan3_raw = (rc3_max[target_sys_id] + rc3_min[target_sys_id]) / 2 + throttle_offset;
@@ -4052,13 +3893,13 @@ function send_joystick_command(target_name, pub_topic, target_sys_id) {
     rc_params.chan8_raw = 65535;
 
     try {
-        var msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE, rc_params);
-        if (msg == null) {
+        let msg = mavlinkGenerateMessage(255, 0xbe, mavlink.MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE, rc_params);
+        if (!msg) {
             console.log("mavlink message is null");
         }
         else {
             term.moveTo.blue(1, conf.drone.length + conf.drone.length + column_count, 'Send joystick command to %s, msg: ' + msg.toString('hex') + '\n', target_name);
-            mqtt_client.publish(pub_topic, msg);
+            mobius_mqtt_client.publish(pub_topic, msg);
         }
     }
     catch (ex) {
@@ -4066,82 +3907,61 @@ function send_joystick_command(target_name, pub_topic, target_sys_id) {
     }
 }
 
-var moment = require('moment');
-
-function save_current_position() {
-    var cur_pos = {};
-    for (var idx in cur_drone_list_selected) {
-        if (cur_drone_list_selected.hasOwnProperty(idx)) {
-            var drone_selected = cur_drone_list_selected[idx].name;
-
-            cur_pos[drone_selected]
-            var cur_lat = (gpi[target_system_id[drone_selected]].lat / 10000000);
-            var cur_lon = (gpi[target_system_id[drone_selected]].lon / 10000000);
-            var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
-            var cur_speed = Math.sqrt(Math.pow(gpi[target_system_id[drone_selected]].vx, 2) + Math.pow(gpi[target_system_id[drone_selected]].vy, 2)) / 100;
-
-            cur_pos[drone_selected] = cur_lat + ':' + cur_lon + ':' + cur_alt + ':' + cur_speed;
-        }
-    }
-
-    var timestamp = moment().format('MM-DD-HH-mm-ss');
-
-    fs.writeFileSync('cur_pos_' + timestamp + '.json', JSON.stringify(cur_pos, null, 4), 'utf8');
-}
+let moment = require('moment');
 
 // follow
-setInterval(function () {
-    for (var idx in conf.drone) {
+setInterval(() => {
+    for (let idx in conf.drone) {
         if (conf.drone.hasOwnProperty(idx)) {
-            var drone_selected = conf.drone[idx].name;
-            var command_delay = 0;
+            let drone_selected = conf.drone[idx].name;
+            let command_delay = 0;
 
-            if(!follow_mode.hasOwnProperty([target_system_id[drone_selected]])) {
+            if (!follow_mode.hasOwnProperty([target_system_id[drone_selected]])) {
                 follow_mode[target_system_id[drone_selected]] = {};
             }
 
-            if(!follow_mode.hasOwnProperty([target_system_id[drone_selected]].hasOwnProperty('foll_enable'))) {
+            if (!follow_mode.hasOwnProperty([target_system_id[drone_selected]].hasOwnProperty('foll_enable'))) {
                 follow_mode[target_system_id[drone_selected]].foll_enable = 0;
             }
 
-            if(follow_mode[target_system_id[drone_selected]].foll_enable === 1) {
-                var foll_sysid = follow_mode[target_system_id[drone_selected]].foll_sysid;
+            if (follow_mode[target_system_id[drone_selected]].foll_enable === 1) {
+                let foll_sysid = follow_mode[target_system_id[drone_selected]].foll_sysid;
 
-                if(target_system_id.hasOwnProperty(foll_sysid)) {
-                    if (target_system_id[drone_selected] != foll_sysid) {
-                        var cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
-                        var cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
-                        var cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
+                if (target_system_id.hasOwnProperty(foll_sysid)) {
+                    if (target_system_id[drone_selected] !== foll_sysid) {
+                        let cur_lat = gpi[target_system_id[drone_selected]].lat / 10000000;
+                        let cur_lon = gpi[target_system_id[drone_selected]].lon / 10000000;
+                        let cur_alt = gpi[target_system_id[drone_selected]].relative_alt / 1000;
 
-                        var result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
+                        let result1 = dfs_xy_conv('toXY', cur_lat, cur_lon);
 
-                        var tar_lat = (gpi[foll_sysid].lat / 10000000);
-                        var tar_lon = (gpi[foll_sysid].lon / 10000000);
-                        var tar_alt = gpi[foll_sysid].relative_alt / 1000;
+                        let tar_lat = (gpi[foll_sysid].lat / 10000000);
+                        let tar_lon = (gpi[foll_sysid].lon / 10000000);
+                        let tar_alt = gpi[foll_sysid].relative_alt / 1000;
 
-                        var result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
+                        let result2 = dfs_xy_conv('toXY', tar_lat, tar_lon);
 
-                        var dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
+                        let dist = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2) + Math.pow((tar_alt - cur_alt), 2));
 
                         if ((dist > follow_mode[target_system_id[drone_selected]].foll_dist_max) || (dist <= 4.0)) {
-                            var foll_x = result2.x - follow_mode[target_system_id[drone_selected]].foll_ofs_x;
-                            var foll_y = result2.y - follow_mode[target_system_id[drone_selected]].foll_ofs_y;
-                            var foll_z = tar_alt - follow_mode[target_system_id[drone_selected]].foll_ofs_z;
+                            let foll_x = result2.x - follow_mode[target_system_id[drone_selected]].foll_ofs_x;
+                            let foll_y = result2.y - follow_mode[target_system_id[drone_selected]].foll_ofs_y;
+                            let foll_z = tar_alt - follow_mode[target_system_id[drone_selected]].foll_ofs_z;
 
-                            var result3 = dfs_xy_conv('toLL', foll_x, foll_y);
+                            let result3 = dfs_xy_conv('toLL', foll_x, foll_y);
 
                             command_delay++;
 
                             // set GUIDED Mode
-                            var custom_mode = 4;
-                            var base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
+                            let custom_mode = 4;
+                            let base_mode = hb[target_system_id[drone_selected]].base_mode & ~mavlink.MAV_MODE_FLAG_DECODE_POSITION_CUSTOM_MODE;
                             base_mode |= mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
                             send_set_mode_command(drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], base_mode, custom_mode);
 
-                            var lat = parseFloat(result3.lat);
-                            var lon = parseFloat(result3.lon);
-                            var alt = parseFloat(foll_z);
-                            var speed = parseFloat(follow_mode[target_system_id[drone_selected]].foll_pos_p);
+                            let lat = parseFloat(result3.lat);
+                            let lon = parseFloat(result3.lon);
+                            let alt = parseFloat(foll_z);
+                            let speed = parseFloat(follow_mode[target_system_id[drone_selected]].foll_pos_p);
 
                             setTimeout(send_goto_command, (back_menu_delay / 2) * command_delay, drone_selected, target_pub_topic[drone_selected], target_system_id[drone_selected], lat, lon, alt);
 
@@ -4157,41 +3977,41 @@ setInterval(function () {
 //
 // LCC DFS 좌표변환을 위한 기초 자료
 //
-var RE = 6371.00877; // 지구 반경(km)
-var GRID = 0.001; // 격자 간격(km)
-var SLAT1 = 30.0; // 투영 위도1(degree)
-var SLAT2 = 60.0; // 투영 위도2(degree)
-var OLON = 126.0; // 기준점 경도(degree)
-var OLAT = 38.0; // 기준점 위도(degree)
-var XO = 43; // 기준점 X좌표(GRID)
-var YO = 136; // 기1준점 Y좌표(GRID)
+let RE = 6371.00877; // 지구 반경(km)
+let GRID = 0.001; // 격자 간격(km)
+let SLAT1 = 30.0; // 투영 위도1(degree)
+let SLAT2 = 60.0; // 투영 위도2(degree)
+let OLON = 126.0; // 기준점 경도(degree)
+let OLAT = 38.0; // 기준점 위도(degree)
+let XO = 43; // 기준점 X좌표(GRID)
+let YO = 136; // 기1준점 Y좌표(GRID)
 //
 // LCC DFS 좌표변환 ( code : "toXY"(위경도->좌표, v1:위도, v2:경도), "toLL"(좌표->위경도,v1:x, v2:y) )
 //
 
 function dfs_xy_conv(code, v1, v2) {
-    var DEGRAD = Math.PI / 180.0;
-    var RADDEG = 180.0 / Math.PI;
+    let DEGRAD = Math.PI / 180.0;
+    let RADDEG = 180.0 / Math.PI;
 
-    var re = RE / GRID;
-    var slat1 = SLAT1 * DEGRAD;
-    var slat2 = SLAT2 * DEGRAD;
-    var olon = OLON * DEGRAD;
-    var olat = OLAT * DEGRAD;
+    let re = RE / GRID;
+    let slat1 = SLAT1 * DEGRAD;
+    let slat2 = SLAT2 * DEGRAD;
+    let olon = OLON * DEGRAD;
+    let olat = OLAT * DEGRAD;
 
-    var sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+    let sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
     sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
-    var sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+    let sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
     sf = Math.pow(sf, sn) * Math.cos(slat1) / sn;
-    var ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
+    let ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
     ro = re * sf / Math.pow(ro, sn);
-    var rs = {};
-    if (code == "toXY") {
+    let rs = {};
+    if (code === "toXY") {
         rs['lat'] = v1;
         rs['lng'] = v2;
-        var ra = Math.tan(Math.PI * 0.25 + (v1) * DEGRAD * 0.5);
+        let ra = Math.tan(Math.PI * 0.25 + (v1) * DEGRAD * 0.5);
         ra = re * sf / Math.pow(ra, sn);
-        var theta = v2 * DEGRAD - olon;
+        let theta = v2 * DEGRAD - olon;
         if (theta > Math.PI) theta -= 2.0 * Math.PI;
         if (theta < -Math.PI) theta += 2.0 * Math.PI;
         theta *= sn;
@@ -4201,72 +4021,27 @@ function dfs_xy_conv(code, v1, v2) {
     else {
         rs['x'] = v1;
         rs['y'] = v2;
-        var xn = v1 - XO;
-        var yn = ro - v2 + YO;
-        ra = Math.sqrt(xn * xn + yn * yn);
-        if (sn < 0.0) - ra;
-        var alat = Math.pow((re * sf / ra), (1.0 / sn));
+        let xn = v1 - XO;
+        let yn = ro - v2 + YO;
+        let ra = Math.sqrt(xn * xn + yn * yn);
+        if (sn < 0.0) -ra;
+        let alat = Math.pow((re * sf / ra), (1.0 / sn));
         alat = 2.0 * Math.atan(alat) - Math.PI * 0.5;
 
+        let theta;
         if (Math.abs(xn) <= 0.0) {
             theta = 0.0;
         }
         else {
             if (Math.abs(yn) <= 0.0) {
                 theta = Math.PI * 0.5;
-                if (xn < 0.0) - theta;
+                if (xn < 0.0) -theta;
             }
             else theta = Math.atan2(xn, yn);
         }
-        var alon = theta / sn + olon;
+        let alon = theta / sn + olon;
         rs['lat'] = alat * RADDEG;
         rs['lng'] = alon * RADDEG;
     }
     return rs;
 }
-//
-// var result = dfs_xy_conv('toXY', 38.0, 126.0);
-// console.log(result);
-//
-// var result1 = dfs_xy_conv('toXY', 36.3170540, 127.2341747);
-// console.log(result1);
-//
-// var result2 = dfs_xy_conv('toXY', 36.3170600, 127.2340448);
-// console.log(result2);
-//
-// var distXY = Math.sqrt(Math.pow(result2.x - result1.x, 2) + Math.pow(result2.y - result1.y, 2));
-// console.log(distXY);
-//
-// result = dfs_xy_conv('toLL', 108326, -367983);
-// console.log(result);
-
-
-//
-// exports.connect = function(uart, rxPin) {
-//     var sbus = {
-//         channels : new Uint16Array(18),
-//         frameLoss : false,
-//         failSafe : false
-//     };
-//     uart.setup(100000, {rx:rxPin, parity:"e",stopbits:2});
-//     uart.removeAllListeners();
-//     var data = "";
-//     uart.on('data', function(d) {
-//         data += d;
-//         var idx = data.indexOf("\x00\x0f");
-//         while (idx >= 0) {
-//             if (idx==23) {
-//                 var l = E.toUint8Array(data.substr(0,23));
-//                 var status = l[22];
-//                 E.mapInPlace(l,sbus.channels,undefined,-11);
-//                 sbus.channels.set([status&128?2047:0,status&64?2047:0],16);
-//                 sbus.frameLoss = !!(status&32);
-//                 sbus.failSafe = !!(status&16);
-//                 sbus.emit('frame', sbus);
-//             }
-//             data = data.substr(idx+2);
-//             idx = data.indexOf("\x00\x0f");
-//         }
-//     });
-//     return sbus;
-// };
